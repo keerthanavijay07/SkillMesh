@@ -39,15 +39,15 @@ if (file_exists(__DIR__ . '/config.php')) {
 
       <?php
       try {
-          // Connect to MySQL server without database first (try 3307 then 3306)
-          $ports = [3307, 3306];
+          // Connect to MySQL server (use DB_PORTS if set, otherwise try configured port or default 3306)
+          $ports = defined('DB_PORTS') ? DB_PORTS : [3306];
           $pdo = null;
           $lastErr = '';
           foreach ($ports as $port) {
               try {
-                  $pdo = new PDO("mysql:host=127.0.0.1;port=$port", $db_user, $db_pass, [
+                  $pdo = new PDO("mysql:host=$db_host;port=$port", $db_user, $db_pass, [
                       PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                      PDO::ATTR_TIMEOUT => 2
+                      PDO::ATTR_TIMEOUT => 5
                   ]);
                   break;
               } catch (PDOException $e) {
