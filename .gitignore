@@ -1,0 +1,75 @@
+# ============================================================
+# SkillMesh – .gitignore
+# ============================================================
+
+# -----------------------------------------------
+# PHP Configuration (contains real DB credentials)
+# -----------------------------------------------
+# Copy php/config.example.php → php/config.php and fill in your credentials.
+# config.php must NEVER be committed.
+php/config.php
+
+# -----------------------------------------------
+# OS & Editor generated files
+# -----------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# JetBrains IDEs (PhpStorm, WebStorm, etc.)
+.idea/
+*.iml
+
+# Visual Studio Code
+.vscode/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# -----------------------------------------------
+# PHP runtime
+# -----------------------------------------------
+# Composer dependencies (not used in this project, but safe to include)
+/vendor/
+composer.lock
+
+# PHP error log
+php_errors.log
+error_log
+
+# -----------------------------------------------
+# Node / npm (not used – but prevent accidental inclusion)
+# -----------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-error.log
+.env
+.env.local
+.env.*.local
+
+# -----------------------------------------------
+# Build & Cache artifacts
+# -----------------------------------------------
+/dist/
+/build/
+*.cache
+*.log
+
+# -----------------------------------------------
+# Database dumps (keep only schema.sql in repo)
+# -----------------------------------------------
+*.sql.gz
+*.dump
+database/backup_*.sql
+
+# -----------------------------------------------
+# Uploaded / generated files (if file upload is added later)
+# -----------------------------------------------
+uploads/
+storage/

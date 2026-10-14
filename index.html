@@ -1,0 +1,3403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SkillMesh – Project Team Intelligence Platform. Build better teams for better projects." />
+  <meta name="keywords" content="SkillMesh, team building, skill analysis, project management, students" />
+  <title>SkillMesh – Project Team Intelligence Platform</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="loading-screen" class="d-flex align-items-center justify-content-center" style="min-height:100vh;background:#f4f7ff;">
+    <div class="text-center p-4">
+      <div class="spinner-border mb-3" style="width:3rem;height:3rem;color:#1a6cf6;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div style="font-family:'Poppins',sans-serif;font-size:1.6rem;font-weight:700;color:#1a6cf6;">
+        Skill<span style="color:#00b0ff;">Mesh</span>
+      </div>
+      <div style="color:#6b7a99;font-size:0.9rem;margin-top:0.25rem;">
+        Loading Project Team Intelligence...
+      </div>
+    </div>
+  </div>
+  <!-- Safe Error Fallback (Displayed only if script execution fails) -->
+  <div id="error-fallback" class="container py-5" style="display:none;">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card border-danger shadow-lg p-4 p-md-5 rounded-4 bg-white">
+          <div class="text-center mb-3">
+            <i class="bi bi-exclamation-triangle-fill text-danger display-4"></i>
+            <h4 class="fw-bold mt-2 text-danger">Application Load Notice</h4>
+          </div>
+          <p class="text-muted small mb-3">
+            An error occurred while compiling or mounting the application.
+          </p>
+          <div class="small text-secondary" id="error-details"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- React Application Mount Point -->
+  <div id="root"></div>
+
+  <!-- Global Error Listener -->
+  <script>
+    window.addEventListener('error', function(event) {
+      var loading = document.getElementById('loading-screen');
+      var fallback = document.getElementById('error-fallback');
+      var details = document.getElementById('error-details');
+      if (fallback && (!document.getElementById('root') || !document.getElementById('root').hasChildNodes())) {
+        if (loading) loading.style.display = 'none';
+        fallback.style.display = 'block';
+        if (details) {
+          details.innerText = 'Log: ' + (event.message || 'Script initialization notice') + ' (' + (event.filename || '') + ':' + (event.lineno || '') + ')';
+        }
+      }
+    });
+  </script>
+
+  <!-- 1. Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- 2. React 18 & ReactDOM 18 -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+  <!-- 3. Navigation: Custom Hash Router implemented in application script (HashRouter, Routes, Route, Link, NavLink, useNavigate, useParams, useLocation) -->
+
+  <!-- 4. PropTypes -->
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.js" crossorigin></script>
+
+  <!-- 5. Babel Standalone (JSX in browser) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- 6. Sample Data (Plain JS) -->
+  <script src="js/data.js"></script>
+
+  <!-- 7. Utility & Algorithm Calculations (Plain JS) -->
+  <script src="js/utils.js"></script>
+
+  <!-- 8. Main React Application with In-Browser Babel Transpilation -->
+  <script type="text/babel">
+// ============================================================
+// SkillMesh – React Application
+// Subject: CS23531 Web Programming
+// Concepts: React Components, JSX, State, Props, PropTypes,
+//           Hooks (useState, useEffect, useMemo, useContext), React Router
+// ============================================================
+
+const { useState, useEffect, useMemo, createContext, useContext } = React;
+// Robust Browser Hash Router for Standalone Browser Environment
+const RouterContext = createContext({ pathname: "/", params: {}, navigate: () => {} });
+
+function HashRouter({ children }) {
+  const [pathname, setPathname] = useState(() => {
+    const hash = window.location.hash;
+    return hash ? hash.replace(/^#/, "") || "/" : "/";
+  });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      const clean = hash ? hash.replace(/^#/, "") || "/" : "/";
+      setPathname(clean);
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  const navigate = (to) => {
+    window.location.hash = to.startsWith("#") ? to : "#" + to;
+  };
+
+  return (
+    <RouterContext.Provider value={{ pathname, navigate, params: {} }}>
+      {children}
+    </RouterContext.Provider>
+  );
+}
+
+function useLocation() {
+  const { pathname } = useContext(RouterContext);
+  return { pathname, hash: window.location.hash, search: "" };
+}
+
+function useNavigate() {
+  const { navigate } = useContext(RouterContext);
+  return navigate;
+}
+
+function useParams() {
+  const { params } = useContext(RouterContext);
+  return params || {};
+}
+
+function matchRoute(routePath, currentPath) {
+  if (routePath === currentPath) return { matched: true, params: {} };
+  const rClean = (routePath || "").split("?")[0];
+  const cClean = (currentPath || "").split("?")[0];
+  const routeParts = rClean.split("/").filter(Boolean);
+  const currentParts = cClean.split("/").filter(Boolean);
+  if (routeParts.length !== currentParts.length) return { matched: false };
+  const params = {};
+  for (let i = 0; i < routeParts.length; i++) {
+    if (routeParts[i].startsWith(":")) {
+      params[routeParts[i].slice(1)] = decodeURIComponent(currentParts[i]);
+    } else if (routeParts[i] !== currentParts[i]) {
+      return { matched: false };
+    }
+  }
+  return { matched: true, params };
+}
+
+function Routes({ children }) {
+  const { pathname, navigate } = useContext(RouterContext);
+  let matchedElement = null;
+  let matchedParams = {};
+
+  React.Children.forEach(children, (child) => {
+    if (!child || matchedElement) return;
+    const { path, element } = child.props;
+    if (!path) return;
+    const { matched, params } = matchRoute(path, pathname);
+    if (matched) {
+      matchedElement = element;
+      matchedParams = params;
+    }
+  });
+
+  return (
+    <RouterContext.Provider value={{ pathname, navigate, params: matchedParams }}>
+      {matchedElement}
+    </RouterContext.Provider>
+  );
+}
+
+function Route({ element }) {
+  return element;
+}
+
+function Link({ to, children, className, style, ...props }) {
+  const href = to.startsWith("#") ? to : "#" + to;
+  return (
+    <a href={href} className={className} style={style} {...props}>
+      {children}
+    </a>
+  );
+}
+
+function NavLink({ to, children, className, style, ...props }) {
+  const { pathname } = useContext(RouterContext);
+  const targetPath = to.startsWith("#") ? to.slice(1) : to;
+  const isActive = targetPath === "/" ? pathname === "/" : pathname.startsWith(targetPath);
+  const resolvedClass = typeof className === "function" ? className({ isActive }) : `${className || ""} ${isActive ? "active" : ""}`.trim();
+  const href = to.startsWith("#") ? to : "#" + to;
+  return (
+    <a href={href} className={resolvedClass} style={style} {...props}>
+      {children}
+    </a>
+  );
+}
+
+// Global Context for App State
+const AppContext = createContext();
+
+// 1. Navbar Component
+function Navbar({ currentUser, onLogout, requestsCount, isBackendConnected, darkMode, onToggleDark }) {
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = document.documentElement;
+      const scrolled = el.scrollTop || document.body.scrollTop;
+      const total = el.scrollHeight - el.clientHeight;
+      setScrollProgress(total > 0 ? Math.min(100, Math.round((scrolled / total) * 100)) : 0);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <>
+      {/* Scroll progress bar */}
+      <div
+        id="scroll-progress"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: scrollProgress + "%",
+          height: "3px",
+          background: "linear-gradient(90deg, var(--primary), var(--accent))",
+          zIndex: 9999,
+          transition: "width 0.1s linear",
+          borderRadius: "0 2px 2px 0"
+        }}
+      />
+      <nav className="navbar navbar-expand-lg sm-navbar sticky-top">
+        <div className="container-fluid px-lg-5 px-3">
+          <Link className="navbar-brand d-flex align-items-center gap-2 me-lg-4" to="/">
+            <i className="bi bi-diagram-3-fill text-primary fs-4"></i>
+            <span>Skill<span style={{ color: "var(--accent)" }}>Mesh</span></span>
+          </Link>
+          <button
+            className="navbar-toggler border-0 shadow-none p-1"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#smNavbarContent"
+            aria-controls="smNavbarContent"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span className="navbar-toggler-icon"></span>
+          </button>
+
+          <div className="collapse navbar-collapse" id="smNavbarContent">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0 gap-lg-1 align-items-lg-center">
+              <li className="nav-item">
+                <NavLink className={({ isActive }) => "nav-link px-3 py-2 " + (isActive ? "active" : "")} to="/">
+                  <i className="bi bi-house-door me-1"></i> Home
+                </NavLink>
+              </li>
+              {currentUser && (
+                <>
+                  <li className="nav-item">
+                    <NavLink className={({ isActive }) => "nav-link px-3 py-2 " + (isActive ? "active" : "")} to="/dashboard">
+                      <i className="bi bi-grid me-1"></i> Dashboard
+                    </NavLink>
+                  </li>
+                  <li className="nav-item">
+                    <NavLink className={({ isActive }) => "nav-link px-3 py-2 " + (isActive ? "active" : "")} to="/create-project">
+                      <i className="bi bi-plus-circle me-1"></i> Create Project
+                    </NavLink>
+                  </li>
+                  <li className="nav-item">
+                    <NavLink className={({ isActive }) => "nav-link px-3 py-2 " + (isActive ? "active" : "")} to="/team-intelligence">
+                      <i className="bi bi-cpu me-1"></i> Team Intelligence
+                    </NavLink>
+                  </li>
+                  <li className="nav-item">
+                    <NavLink className={({ isActive }) => "nav-link px-3 py-2 " + (isActive ? "active" : "")} to="/students">
+                      <i className="bi bi-people me-1"></i> Explore Students
+                    </NavLink>
+                  </li>
+                  <li className="nav-item">
+                    <NavLink className={({ isActive }) => "nav-link px-3 py-2 position-relative " + (isActive ? "active" : "")} to="/requests">
+                      <i className="bi bi-send me-1"></i> Requests
+                      {requestsCount > 0 && (
+                        <span className="badge rounded-pill bg-danger ms-1" style={{ fontSize: "0.65rem", padding: "0.2em 0.55em" }}>
+                          {requestsCount}
+                        </span>
+                      )}
+                    </NavLink>
+                  </li>
+                </>
+              )}
+            </ul>
+
+            <div className="d-flex align-items-center gap-2 ms-lg-auto pt-2 pt-lg-0 border-top border-lg-0">
+              <div className="d-flex align-items-center">
+                {isBackendConnected ? (
+                  <span className="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1 d-inline-flex align-items-center gap-1" style={{ fontSize: "0.72rem", fontWeight: "600" }} title="Connected to live MySQL Database">
+                    <i className="bi bi-database-check text-success"></i> MySQL Live
+                  </span>
+                ) : (
+                  <span className="badge rounded-pill bg-light text-muted border px-2 py-1 d-inline-flex align-items-center gap-1" style={{ fontSize: "0.72rem", fontWeight: "600" }} title="Operating in Standalone Fallback Mode">
+                    <i className="bi bi-hdd-stack"></i> Demo
+                  </span>
+                )}
+              </div>
+
+              {/* Dark Mode Toggle */}
+              <button
+                id="darkModeToggle"
+                onClick={onToggleDark}
+                title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                className="btn btn-sm rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  border: "1.5px solid var(--border)",
+                  background: darkMode ? "var(--surface-3)" : "var(--surface-2)",
+                  color: darkMode ? "var(--warning)" : "var(--text-muted)",
+                  transition: "all 0.3s ease",
+                  flexShrink: 0
+                }}
+              >
+                <i className={darkMode ? "bi bi-sun-fill" : "bi bi-moon-stars-fill"} style={{ fontSize: "0.95rem" }}></i>
+              </button>
+
+              {currentUser ? (
+                <div className="dropdown">
+                  <button
+                    className="btn btn-outline-primary d-flex align-items-center gap-2 rounded-pill px-3 py-1 dropdown-toggle shadow-none"
+                    type="button"
+                    id="userDropdown"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    style={{ fontSize: "0.875rem" }}
+                  >
+                    <div
+                      className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        background: currentUser.avatar_color || "var(--primary)",
+                        fontSize: "0.75rem",
+                        flexShrink: 0
+                      }}
+                    >
+                      {currentUser.initials || getInitials(currentUser.name)}
+                    </div>
+                    <span className="fw-semibold text-truncate" style={{ maxWidth: "120px" }}>{currentUser.name}</span>
+                  </button>
+                  <ul className="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 py-2" aria-labelledby="userDropdown">
+                    <li>
+                      <Link className="dropdown-item py-2" to="/profile">
+                        <i className="bi bi-person me-2 text-primary"></i> My Profile
+                      </Link>
+                    </li>
+                    <li>
+                      <Link className="dropdown-item py-2" to="/dashboard">
+                        <i className="bi bi-speedometer2 me-2 text-primary"></i> Dashboard
+                      </Link>
+                    </li>
+                    <li><hr className="dropdown-divider my-1" /></li>
+                    <li>
+                      <button className="dropdown-item text-danger py-2" onClick={onLogout}>
+                        <i className="bi bi-box-arrow-right me-2"></i> Logout
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              ) : (
+                <div className="d-flex gap-2">
+                  <Link to="/login" className="btn btn-nav-login btn-sm">
+                    Login
+                  </Link>
+                  <Link to="/register" className="btn btn-nav-register btn-sm">
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+    </>
+  );
+}
+
+Navbar.propTypes = {
+  currentUser: PropTypes.object,
+  onLogout: PropTypes.func.isRequired,
+  requestsCount: PropTypes.number,
+  isBackendConnected: PropTypes.bool,
+  darkMode: PropTypes.bool,
+  onToggleDark: PropTypes.func
+};
+
+// 2. Skill Badge Component
+function SkillBadge({ name, level, levelLabel }) {
+  let badgeClass = "badge rounded-pill bg-light text-primary border";
+  if (level >= 90) badgeClass = "badge rounded-pill bg-success-subtle text-success border border-success-subtle";
+  else if (level >= 75) badgeClass = "badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle";
+  else if (level >= 50) badgeClass = "badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle";
+
+  return (
+    <span className={badgeClass + " px-2 py-1 me-1 mb-1 font-monospace"}>
+      {name} {level ? <small className="fw-bold">({level}%)</small> : ""}
+    </span>
+  );
+}
+
+SkillBadge.propTypes = {
+  name: PropTypes.string.isRequired,
+  level: PropTypes.number,
+  levelLabel: PropTypes.string
+};
+
+// 3. Skill Progress Bar Component
+function SkillProgress({ name, currentCoverage, requiredLevel = 70, showDetails = true }) {
+  const status = getSkillStatus(currentCoverage, requiredLevel);
+  const colorClass = getProgressBarColor(currentCoverage, requiredLevel);
+
+  return (
+    <div className="skill-progress-wrap mb-3">
+      <div className="skill-progress-label d-flex justify-content-between align-items-center mb-1">
+        <div className="d-flex align-items-center gap-2">
+          <span className="skill-progress-name fw-semibold">{name}</span>
+          <span className={`badge bg-${status.variant} rounded-pill`} style={{ fontSize: "0.68rem" }}>
+            {status.label}
+          </span>
+        </div>
+        <div className="small text-muted">
+          <span className="fw-bold text-dark">{currentCoverage}%</span>
+          {showDetails && <span className="text-muted ms-1">(Req: {requiredLevel}%)</span>}
+        </div>
+      </div>
+      <div className="progress" style={{ height: "10px", borderRadius: "50px", backgroundColor: "#e9edf7" }}>
+        <div
+          className={`progress-bar ${colorClass} progress-bar-striped progress-bar-animated`}
+          role="progressbar"
+          style={{ width: `${Math.min(100, currentCoverage)}%`, transition: "width 1s ease" }}
+          aria-valuenow={currentCoverage}
+          aria-valuemin="0"
+          aria-valuemax="100"
+        ></div>
+      </div>
+    </div>
+  );
+}
+
+SkillProgress.propTypes = {
+  name: PropTypes.string.isRequired,
+  currentCoverage: PropTypes.number.isRequired,
+  requiredLevel: PropTypes.number,
+  showDetails: PropTypes.bool
+};
+
+// 4. Student Card Component
+function StudentCard({ student, onAdd, onRemove, isSelected, showAction = true, onRequestCollab }) {
+  return (
+    <div className="card sm-card h-100 shadow-sm border-0 position-relative">
+      <div className="card-body p-3 p-md-4 d-flex flex-column justify-content-between">
+        <div>
+          <div className="d-flex align-items-start gap-3 mb-3">
+            <div
+              className="student-avatar text-white fw-bold shadow-sm"
+              style={{ background: student.avatar_color || "var(--primary)" }}
+            >
+              {student.initials || getInitials(student.name)}
+            </div>
+            <div className="flex-grow-1">
+              <h5 className="card-title fw-bold mb-1 text-dark">{student.name}</h5>
+              <div className="text-muted small mb-1">
+                <span className="badge bg-light text-secondary border me-1">{student.student_id}</span>
+                <span>{student.department} • {student.year}</span>
+              </div>
+              <div className="text-primary fw-medium small">
+                <i className="bi bi-person-badge me-1"></i>
+                {student.role}
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <div className="text-muted small fw-semibold mb-2">Key Skills:</div>
+            <div className="d-flex flex-wrap">
+              {student.skills && student.skills.slice(0, 4).map((s, idx) => (
+                <SkillBadge key={idx} name={s.name} level={s.level} levelLabel={s.levelLabel} />
+              ))}
+              {student.skills && student.skills.length > 4 && (
+                <span className="badge rounded-pill bg-light text-muted border px-2 py-1 mb-1">
+                  +{student.skills.length - 4} more
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {showAction && (
+          <div className="pt-2 border-top mt-auto d-flex gap-2">
+            {isSelected ? (
+              <button
+                className="btn btn-outline-danger btn-sm w-100 rounded-pill d-flex align-items-center justify-content-center gap-1"
+                onClick={() => onRemove && onRemove(student.id)}
+              >
+                <i className="bi bi-person-dash"></i> Remove from Team
+              </button>
+            ) : onAdd ? (
+              <button
+                className="btn btn-primary-sm btn-sm w-100 rounded-pill justify-content-center"
+                onClick={() => onAdd(student.id)}
+              >
+                <i className="bi bi-person-plus"></i> Add to Team
+              </button>
+            ) : onRequestCollab ? (
+              <button
+                className="btn btn-outline-primary btn-sm w-100 rounded-pill d-flex align-items-center justify-content-center gap-1"
+                onClick={() => onRequestCollab(student)}
+              >
+                <i className="bi bi-send"></i> Request Collaboration
+              </button>
+            ) : null}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+StudentCard.propTypes = {
+  student: PropTypes.object.isRequired,
+  onAdd: PropTypes.func,
+  onRemove: PropTypes.func,
+  isSelected: PropTypes.bool,
+  showAction: PropTypes.bool,
+  onRequestCollab: PropTypes.func
+};
+
+// 5. Team Health Card
+function TeamHealthCard({ score, memberCount, requiredSize }) {
+  const healthInfo = getHealthLabel(score);
+  const strokeDashoffset = 380 - (380 * score) / 100;
+  const statusColor = score >= 75 ? "#00c897" : score >= 50 ? "#ffb300" : "#ef5350";
+
+  return (
+    <div className="card sm-card border-0 shadow-sm text-center p-4 bg-white">
+      <h5 className="fw-bold text-dark mb-3">Overall Team Health</h5>
+      
+      <div className="d-flex justify-content-center my-2 position-relative">
+        <svg width="150" height="150" viewBox="0 0 140 140">
+          <circle
+            cx="70"
+            cy="70"
+            r="60"
+            fill="none"
+            stroke="#e9edf7"
+            strokeWidth="12"
+          />
+          <circle
+            cx="70"
+            cy="70"
+            r="60"
+            fill="none"
+            stroke={statusColor}
+            strokeWidth="12"
+            strokeDasharray="380"
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            transform="rotate(-90 70 70)"
+            style={{ transition: "stroke-dashoffset 1.2s ease" }}
+          />
+        </svg>
+        <div
+          className="position-absolute d-flex flex-column align-items-center justify-content-center"
+          style={{ inset: 0 }}
+        >
+          <span className="display-6 fw-bold" style={{ color: statusColor }}>{score}%</span>
+          <span className="badge rounded-pill text-uppercase" style={{ backgroundColor: `${statusColor}22`, color: statusColor, fontSize: '0.7rem' }}>
+            {healthInfo.label}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-3 text-muted small">
+        <div className="d-flex justify-content-between px-3 py-1 border-bottom">
+          <span>Team Size:</span>
+          <span className="fw-bold text-dark">{memberCount} / {requiredSize} Members</span>
+        </div>
+        <div className="d-flex justify-content-between px-3 py-1 mt-1">
+          <span>Health Status:</span>
+          <span className="fw-bold" style={{ color: statusColor }}>{healthInfo.label} Coverage</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+TeamHealthCard.propTypes = {
+  score: PropTypes.number.isRequired,
+  memberCount: PropTypes.number.isRequired,
+  requiredSize: PropTypes.number.isRequired
+};
+
+// 6. Project Risk Card
+function RiskCard({ risk }) {
+  const badgeClass =
+    risk.severity === "HIGH"
+      ? "bg-danger text-white"
+      : risk.severity === "MEDIUM"
+      ? "bg-warning text-dark"
+      : "bg-success text-white";
+
+  const cardBorder =
+    risk.severity === "HIGH"
+      ? "border-danger-subtle bg-danger-subtle bg-opacity-10"
+      : risk.severity === "MEDIUM"
+      ? "border-warning-subtle bg-warning-subtle bg-opacity-10"
+      : "border-success-subtle bg-success-subtle bg-opacity-10";
+
+  return (
+    <div className={`card mb-3 border rounded-3 p-3 shadow-sm ${cardBorder}`}>
+      <div className="d-flex justify-content-between align-items-start mb-2">
+        <div className="d-flex align-items-center gap-2">
+          <i className={`bi ${risk.icon || "bi-shield-exclamation"} fs-5 ${risk.severity === "HIGH" ? "text-danger" : risk.severity === "MEDIUM" ? "text-warning" : "text-success"}`}></i>
+          <h6 className="fw-bold mb-0 text-dark">{risk.type}</h6>
+        </div>
+        <span className={`badge rounded-pill ${badgeClass} px-3 py-1 text-uppercase fw-bold`} style={{ fontSize: "0.72rem" }}>
+          {risk.severity} RISK
+        </span>
+      </div>
+      <p className="small text-secondary mb-2">{risk.description}</p>
+      <div className="p-2 bg-white rounded border border-light-subtle d-flex align-items-center gap-2 small">
+        <i className="bi bi-lightbulb-fill text-warning"></i>
+        <span><strong>Recommendation:</strong> {risk.recommendation}</span>
+      </div>
+    </div>
+  );
+}
+
+RiskCard.propTypes = {
+  risk: PropTypes.object.isRequired
+};
+
+// 7. Recommendation Card
+function RecommendationCard({ rec, onAddMember, onRequestCollab }) {
+  const { student, compatibility, coversSkills } = rec;
+
+  return (
+    <div className="card sm-card h-100 border-0 shadow-sm p-3 position-relative">
+      <div className="position-absolute top-0 end-0 m-3">
+        <span className="badge rounded-pill bg-primary px-3 py-1 shadow-sm fw-bold">
+          {compatibility}% Match
+        </span>
+      </div>
+
+      <div className="d-flex align-items-center gap-3 mb-3">
+        <div
+          className="student-avatar text-white fw-bold shadow-sm"
+          style={{ background: student.avatar_color || "var(--primary)" }}
+        >
+          {student.initials || getInitials(student.name)}
+        </div>
+        <div>
+          <h5 className="fw-bold mb-0 text-dark">{student.name}</h5>
+          <div className="small text-muted">{student.department} • {student.year}</div>
+          <div className="small text-primary fw-medium">{student.role}</div>
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div className="small text-muted fw-semibold mb-1">Solves Skill Gaps In:</div>
+        <div className="d-flex flex-wrap gap-1">
+          {coversSkills.map((cs, idx) => (
+            <span key={idx} className="badge bg-success-subtle text-success border border-success-subtle">
+              <i className="bi bi-check-circle-fill me-1"></i> {cs.name}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div className="small text-muted fw-semibold mb-1">Top Skills:</div>
+        <div className="d-flex flex-wrap">
+          {student.skills.slice(0, 3).map((s, idx) => (
+            <SkillBadge key={idx} name={s.name} level={s.level} />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-auto pt-2 border-top d-flex gap-2">
+        {onAddMember && (
+          <button
+            className="btn btn-primary-sm btn-sm flex-grow-1 justify-content-center"
+            onClick={() => onAddMember(student.id)}
+          >
+            <i className="bi bi-person-plus"></i> Add to Team
+          </button>
+        )}
+        {onRequestCollab && (
+          <button
+            className="btn btn-outline-primary btn-sm rounded-pill"
+            onClick={() => onRequestCollab(student)}
+            title="Request Collaboration"
+          >
+            <i className="bi bi-send"></i> Request
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+RecommendationCard.propTypes = {
+  rec: PropTypes.object.isRequired,
+  onAddMember: PropTypes.func,
+  onRequestCollab: PropTypes.func
+};
+
+// 8. Reusable Sidebar Component
+function Sidebar({ activeItem, project, projects, onSelectProject }) {
+  const { requests = [] } = useContext(AppContext);
+  const location = useLocation();
+  const currentPath = activeItem || location.pathname;
+  const requestsCount = requests.filter(r => r.status === "pending").length;
+
+  const menuItems = [
+    { path: "/dashboard", label: "Dashboard", icon: "bi-grid-fill" },
+    { path: "/profile", label: "My Profile", icon: "bi-person-badge" },
+    { path: project ? `/team-intelligence/${project.id}` : "/team-intelligence", label: "Team Intelligence", icon: "bi-cpu-fill", badge: "Live" },
+    { path: project ? `/team-builder/${project.id}` : "/team-builder", label: "Team Builder", icon: "bi-people-fill" },
+    { path: project ? `/skill-gaps/${project.id}` : "/skill-gaps", label: "Skill Gap Analysis", icon: "bi-graph-down-arrow" },
+    { path: project ? `/risk-analysis/${project.id}` : "/risk-analysis", label: "Risk Analysis", icon: "bi-shield-exclamation" },
+    { path: project ? `/recommendations/${project.id}` : "/recommendations", label: "Recommendations", icon: "bi-magic" },
+    { path: "/students", label: "Explore Students", icon: "bi-search" },
+    { path: "/create-project", label: "Create Project", icon: "bi-plus-circle-fill" },
+    { path: "/requests", label: "Collaboration", icon: "bi-send-fill", count: requestsCount }
+  ];
+
+  return (
+    <aside className="sm-sidebar card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+      <div className="d-flex align-items-center gap-2 px-2 py-2 mb-3 border-bottom pb-3">
+        <div className="rounded-3 bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style={{ width: "36px", height: "36px" }}>
+          <i className="bi bi-diagram-3-fill fs-5"></i>
+        </div>
+        <div>
+          <div className="fw-bold text-dark small">Workspace Menu</div>
+          <div className="text-muted" style={{ fontSize: "0.72rem" }}>SkillMesh • Intelligence</div>
+        </div>
+      </div>
+
+      {projects && projects.length > 0 && onSelectProject && (
+        <div className="mb-3 px-1">
+          <label className="form-label text-muted small fw-semibold mb-1" style={{ fontSize: "0.75rem" }}>
+            <i className="bi bi-folder2-open me-1"></i> Active Project
+          </label>
+          <select
+            className="form-select form-select-sm rounded-pill"
+            value={project ? project.id : ""}
+            onChange={(e) => onSelectProject(parseInt(e.target.value))}
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <nav className="nav flex-column gap-1">
+        {menuItems.map((item, idx) => {
+          const isActive = currentPath === item.path || (item.path !== "/" && currentPath.startsWith(item.path.split("/")[1] ? `/${item.path.split("/")[1]}` : item.path));
+          return (
+            <Link
+              key={idx}
+              to={item.path}
+              className={`nav-link d-flex align-items-center justify-content-between rounded-3 px-3 py-2 ${isActive ? "bg-primary text-white shadow-sm fw-semibold" : "text-muted hover-bg-light"}`}
+              style={{ transition: "all 0.2s ease" }}
+            >
+              <div className="d-flex align-items-center gap-2">
+                <i className={`bi ${item.icon} ${isActive ? "text-white" : "text-primary"}`}></i>
+                <span className="small">{item.label}</span>
+              </div>
+              {item.badge && (
+                <span className={`badge rounded-pill ${isActive ? "bg-white text-primary" : "bg-primary-subtle text-primary"}`} style={{ fontSize: "0.65rem" }}>
+                  {item.badge}
+                </span>
+              )}
+              {item.count > 0 && (
+                <span className="badge rounded-pill bg-danger text-white" style={{ fontSize: "0.65rem" }}>
+                  {item.count}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+}
+
+Sidebar.propTypes = {
+  activeItem: PropTypes.string,
+  project: PropTypes.object,
+  projects: PropTypes.array,
+  onSelectProject: PropTypes.func
+};
+
+// 9. Reusable Project Card Component
+function ProjectCard({ project, students = [] }) {
+  const teamStudents = students.filter((s) => (project.team_members || []).includes(s.id));
+  const health = calculateTeamHealth(project, teamStudents);
+  const risks = sortRisksByPriority(detectRisks(project, teamStudents));
+  const highRisks = risks.filter((r) => r.severity === "HIGH").length;
+
+  return (
+    <div className="card sm-card border-0 shadow-sm h-100 w-100 rounded-4 p-4 hover-shadow bg-white d-flex flex-column justify-content-between">
+      <div>
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <span className="badge bg-primary-subtle text-primary fw-semibold px-2.5 py-1.5 rounded-pill" style={{ fontSize: "0.75rem" }}>
+            <i className="bi bi-tag-fill me-1"></i> {project.category}
+          </span>
+          <div className="d-flex align-items-center gap-1.5 flex-wrap">
+            <span className={`badge rounded-pill px-2.5 py-1.5 fw-bold ${health >= 75 ? "bg-success text-white" : health >= 50 ? "bg-warning text-dark" : "bg-danger text-white"}`} style={{ fontSize: "0.74rem" }}>
+              Health: {health}%
+            </span>
+            {highRisks > 0 && (
+              <span className="badge rounded-pill bg-danger text-white px-2.5 py-1.5 fw-bold" style={{ fontSize: "0.72rem" }} title={`${highRisks} critical risk(s) flagged`}>
+                <i className="bi bi-exclamation-triangle-fill me-1"></i> {highRisks} High Risk
+              </span>
+            )}
+          </div>
+        </div>
+
+        <h5 className="fw-bold text-dark mb-2" style={{ fontSize: "1.12rem", lineHeight: "1.35" }}>{project.name}</h5>
+        <p className="text-muted small mb-3 text-truncate-2" style={{ minHeight: "42px", lineHeight: "1.5" }}>{project.description}</p>
+
+        <div className="mb-3">
+          <div className="text-muted small fw-semibold mb-1.5" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.4px" }}>Required Skills:</div>
+          <div className="d-flex flex-wrap gap-1.5">
+            {project.required_skills && project.required_skills.slice(0, 4).map((sk, idx) => (
+              <span key={idx} className="badge bg-light text-dark border small px-2 py-1" style={{ fontSize: "0.72rem", fontWeight: "500" }}>
+                {sk.name} <span className="text-muted fw-semibold">({sk.required_level}%)</span>
+              </span>
+            ))}
+            {project.required_skills && project.required_skills.length > 4 && (
+              <span className="badge bg-light text-muted border small px-2 py-1" style={{ fontSize: "0.72rem" }}>
+                +{project.required_skills.length - 4} more
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-3 border-top mt-auto">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <div className="d-flex align-items-center gap-1.5">
+            <span className="small text-muted me-1" style={{ fontSize: "0.75rem", fontWeight: "600" }}>Team:</span>
+            <div className="d-flex align-items-center">
+              {teamStudents.slice(0, 4).map((m) => (
+                <div
+                  key={m.id}
+                  className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm me-1"
+                  style={{ width: "26px", height: "26px", background: m.avatar_color || "var(--primary)", fontSize: "0.68rem", border: "1.5px solid #fff", flexShrink: 0 }}
+                  title={`${m.name} (${m.role})`}
+                >
+                  {m.initials || getInitials(m.name)}
+                </div>
+              ))}
+            </div>
+            <span className="badge bg-light text-dark border ms-1 px-2 py-1" style={{ fontSize: "0.72rem", fontWeight: "600" }}>
+              {project.team_members ? project.team_members.length : 0} / {project.required_team_size} Members
+            </span>
+          </div>
+        </div>
+
+        <div className="row g-2">
+          <div className="col-6">
+            <Link to={`/team-intelligence/${project.id}`} className="btn btn-outline-primary btn-sm w-100 rounded-pill d-flex align-items-center justify-content-center gap-1.5" style={{ height: "38px", fontSize: "0.82rem", fontWeight: "600" }}>
+              <i className="bi bi-speedometer2"></i> Intelligence
+            </Link>
+          </div>
+          <div className="col-6">
+            <Link to={`/team-builder/${project.id}`} className="btn btn-primary-sm btn-sm w-100 rounded-pill d-flex align-items-center justify-content-center gap-1.5" style={{ height: "38px", fontSize: "0.82rem", fontWeight: "600" }}>
+              <i className="bi bi-people-fill"></i> Team Builder
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ProjectCard.propTypes = {
+  project: PropTypes.object.isRequired,
+  students: PropTypes.array
+};
+
+// 10. Reusable Skill Gap Card Component
+function SkillGapCard({ skill, coverage, required, candidateStudents = [], onAddStudent }) {
+  const gap = Math.max(0, required - coverage);
+  const status = getSkillStatus(coverage, required);
+  const progressColor = getProgressBarColor(coverage, required);
+
+  return (
+    <div className={`card border-0 shadow-sm rounded-4 p-3 p-md-4 mb-3 bg-white h-100 border-start border-4 border-${status.variant}`}>
+      <div className="d-flex justify-content-between align-items-start mb-2">
+        <div>
+          <span className="badge bg-light text-muted border mb-1 small" style={{ fontSize: "0.7rem" }}>Project Requirement</span>
+          <h5 className="fw-bold mb-0 text-dark">{skill.name}</h5>
+        </div>
+        <span className={`badge bg-${status.variant} rounded-pill px-3 py-1 fw-bold text-uppercase`} style={{ fontSize: "0.72rem" }}>
+          {status.label}
+        </span>
+      </div>
+
+      <div className="my-3">
+        <div className="d-flex justify-content-between align-items-center small mb-1">
+          <span className="text-muted">Current Team Coverage:</span>
+          <span className="fw-bold text-dark">{coverage}% <span className="text-muted fw-normal">(Required: {required}%)</span></span>
+        </div>
+        <div className="progress" style={{ height: "10px", borderRadius: "50px", backgroundColor: "#eef2f9" }}>
+          <div
+            className={`progress-bar ${progressColor} progress-bar-striped progress-bar-animated`}
+            style={{ width: `${Math.min(100, coverage)}%` }}
+            role="progressbar"
+            aria-valuenow={coverage}
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+        <div className="d-flex justify-content-between align-items-center mt-2 small">
+          <span className="text-muted">Deficit Gap:</span>
+          <span className={gap > 0 ? "text-danger fw-bold" : "text-success fw-bold"}>
+            {gap > 0 ? `-${gap}% Shortage` : "✓ Threshold Satisfied"}
+          </span>
+        </div>
+      </div>
+
+      <div className="p-2 rounded bg-light border border-light-subtle small mb-3 text-secondary">
+        <i className="bi bi-info-circle-fill text-primary me-1"></i>
+        {gap === 0
+          ? "Sufficiently covered by active members. Maintain current roster."
+          : coverage === 0
+          ? `Critical vacancy: Zero members possess ${skill.name}. Recruit immediately.`
+          : `Below target: Add an overlapping peer with ${skill.name} to close the ${gap}% gap.`}
+      </div>
+
+      {candidateStudents && candidateStudents.length > 0 && (
+        <div className="pt-2 border-top mt-auto">
+          <div className="text-muted small fw-semibold mb-2" style={{ fontSize: "0.75rem" }}>Candidates to Close Gap:</div>
+          <div className="d-flex flex-wrap gap-2">
+            {candidateStudents.slice(0, 3).map((st) => (
+              <div key={st.id} className="d-flex align-items-center gap-1 bg-surface-2 p-1 px-2 rounded-pill border small">
+                <div
+                  className="rounded-circle text-white fw-bold d-flex align-items-center justify-content-center"
+                  style={{ width: "20px", height: "20px", background: st.avatar_color || "var(--primary)", fontSize: "0.6rem" }}
+                >
+                  {st.initials || getInitials(st.name)}
+                </div>
+                <span className="fw-semibold text-dark" style={{ fontSize: "0.72rem" }}>{st.name.split(" ")[0]}</span>
+                {onAddStudent && (
+                  <button
+                    className="btn btn-sm btn-link p-0 text-primary ms-1"
+                    title={`Add ${st.name} to team`}
+                    onClick={() => onAddStudent(st.id)}
+                  >
+                    <i className="bi bi-plus-circle-fill"></i>
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+SkillGapCard.propTypes = {
+  skill: PropTypes.object.isRequired,
+  coverage: PropTypes.number.isRequired,
+  required: PropTypes.number.isRequired,
+  candidateStudents: PropTypes.array,
+  onAddStudent: PropTypes.func
+};
+
+// 11. HOME PAGE
+function HomePage() {
+  const { projects, students } = useContext(AppContext);
+
+  // Compute live showcase metrics from Project 1 (or first available project)
+  const showcaseProject = useMemo(() => {
+    return projects && projects.length > 0 ? projects[0] : null;
+  }, [projects]);
+
+  const showcaseTeamMembers = useMemo(() => {
+    if (!showcaseProject) return [];
+    return (showcaseProject.team_members || [])
+      .map(id => students.find(s => s.id === id))
+      .filter(Boolean);
+  }, [showcaseProject, students]);
+
+  const showcaseHealth = useMemo(() => {
+    if (!showcaseProject) return 0;
+    return calculateTeamHealth(showcaseProject, showcaseTeamMembers);
+  }, [showcaseProject, showcaseTeamMembers]);
+
+  const showcaseSkills = useMemo(() => {
+    if (!showcaseProject || !showcaseProject.required_skills) return [];
+    return showcaseProject.required_skills.slice(0, 4).map(req => {
+      const cov = calculateSkillCoverage(req.name, showcaseTeamMembers);
+      const status = getSkillStatus(cov, req.required_level || 70);
+      return {
+        name: req.name,
+        coverage: cov,
+        required: req.required_level || 70,
+        status: status
+      };
+    });
+  }, [showcaseProject, showcaseTeamMembers]);
+
+  return (
+    <div className="animate-fade" style={{ position: "relative", overflow: "hidden" }}>
+      {/* Hero Section */}
+      <section className="hero-section text-white py-5" style={{ position: "relative" }}>
+        {/* Floating particle dots */}
+        <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+          {[...Array(18)].map((_, i) => (
+            <div key={i} style={{
+              position: "absolute",
+              borderRadius: "50%",
+              background: "rgba(255,255,255," + (0.05 + (i % 5) * 0.03) + ")",
+              width: (6 + (i % 7) * 8) + "px",
+              height: (6 + (i % 7) * 8) + "px",
+              left: ((i * 37 + 11) % 95) + "%",
+              top: ((i * 53 + 7) % 85) + "%",
+              animation: "floatParticle " + (5 + (i % 4) * 2) + "s ease-in-out infinite alternate",
+              animationDelay: (i * 0.4) + "s"
+            }} />
+          ))}
+        </div>
+        <div className="container py-md-5 hero-content">
+          <div className="row align-items-center g-5">
+            <div className="col-lg-7 text-center text-lg-start">
+              <div className="hero-badge d-inline-flex align-items-center mb-3">
+                <i className="bi bi-cpu-fill text-warning me-2"></i> Rule-Based Team Intelligence Platform
+              </div>
+              <h1 className="hero-title mb-3">
+                Build Better Teams.<br />
+                <span className="highlight">Build Better Projects.</span>
+              </h1>
+              <p className="hero-subtitle lead mb-4">
+                SkillMesh analyzes project requirements, evaluates team skills,
+                identifies skill gaps, detects project risks, and helps students build balanced, high-performing teams.
+              </p>
+              <div className="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                <Link to="/create-project" className="btn btn-primary-sm btn-lg shadow">
+                  <i className="bi bi-plus-circle me-1"></i> Create Project
+                </Link>
+                <Link to="/students" className="btn btn-outline-light btn-lg rounded-pill px-4">
+                  <i className="bi bi-search me-1"></i> Explore Students
+                </Link>
+              </div>
+            </div>
+
+            <div className="col-lg-5">
+              <div className="hero-card shadow-lg">
+                <div className="d-flex align-items-center justify-content-between mb-3 border-bottom border-light border-opacity-25 pb-2">
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="badge bg-success rounded-pill">Live Showcase</span>
+                    <h6 className="mb-0 text-white fw-bold">{showcaseProject ? showcaseProject.title : "Smart Agriculture Platform"}</h6>
+                  </div>
+                  <span className="badge bg-light text-dark fw-bold">Health: {showcaseHealth}%</span>
+                </div>
+                
+                {showcaseSkills.map(sk => (
+                  <div key={sk.name} className="mb-3">
+                    <div className="d-flex justify-content-between text-white-50 small mb-1">
+                      <span>{sk.name}</span>
+                      <span className={sk.status.cls === "danger" ? "text-danger fw-bold" : sk.status.cls === "warning" ? "text-warning fw-bold" : "text-white fw-bold"}>
+                        {sk.coverage}% ({sk.status.label})
+                      </span>
+                    </div>
+                    <div className="progress" style={{ height: "6px" }}>
+                      <div className={`progress-bar bg-${sk.status.cls}`} style={{ width: `${Math.min(sk.coverage, 100)}%` }}></div>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="p-2 bg-white bg-opacity-10 rounded text-center small text-white mt-3">
+                  <i className="bi bi-info-circle me-1 text-info"></i>
+                  Live Rule-Based Computation from current project data ({showcaseTeamMembers.length} members).
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Sections */}
+      <section className="py-5 bg-white">
+        <div className="container py-4">
+          <div className="text-center mb-5">
+            <h6 className="text-primary fw-bold text-uppercase letter-spacing-1">Core Capabilities</h6>
+            <h2 className="fw-bold display-6">Engineered For College Project Success</h2>
+            <p className="text-muted mx-auto" style={{ maxWidth: "600px" }}>
+              Transparent, rule-based algorithms calculate team readiness, balance skills, and prevent last-minute project failures.
+            </p>
+          </div>
+
+          <div className="row g-4">
+            <div className="col-md-4">
+              <div className="feature-card h-100 p-4 rounded-4 shadow-sm">
+                <div className="feature-icon bg-primary-subtle text-primary mb-3">
+                  <i className="bi bi-person-check-fill fs-3"></i>
+                </div>
+                <h4 className="fw-bold mb-2">Skill Matching</h4>
+                <p className="text-muted small">
+                  Find candidates matched directly to unmet project needs with transparent multi-factor compatibility scoring.
+                </p>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="feature-card h-100 p-4 rounded-4 shadow-sm">
+                <div className="feature-icon bg-success-subtle text-success mb-3">
+                  <i className="bi bi-pie-chart-fill fs-3"></i>
+                </div>
+                <h4 className="fw-bold mb-2">Team Intelligence</h4>
+                <p className="text-muted small">
+                  Evaluate complete team skill coverage with comprehensive health metrics, visual charts, and gap diagnostics.
+                </p>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="feature-card h-100 p-4 rounded-4 shadow-sm">
+                <div className="feature-icon bg-danger-subtle text-danger mb-3">
+                  <i className="bi bi-shield-exclamation fs-3"></i>
+                </div>
+                <h4 className="fw-bold mb-2">Risk Detection</h4>
+                <p className="text-muted small">
+                  Flag single-member dependencies, critical skill absences, and team size deficits before development starts.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-5 bg-light">
+        <div className="container py-4">
+          <div className="text-center mb-5">
+            <h6 className="text-primary fw-bold text-uppercase">Workflow</h6>
+            <h2 className="fw-bold">How SkillMesh Works</h2>
+            <p className="text-muted">A clear, 6-step workflow from idea to fully balanced team.</p>
+          </div>
+
+          <div className="row g-3 justify-content-center text-center">
+            {[
+              { step: "1", title: "Create Project", desc: "Define name, description & category" },
+              { step: "2", title: "Define Required Skills", desc: "Specify skills & proficiency levels" },
+              { step: "3", title: "Build Team", desc: "Select and add student team members" },
+              { step: "4", title: "Analyze Team", desc: "Evaluate coverage & calculate team health" },
+              { step: "5", title: "Identify Gaps", desc: "Detect risks & missing competencies" },
+              { step: "6", title: "Improve Team", desc: "Request collaboration & recruit peers" }
+            ].map((item, idx) => (
+              <div key={idx} className="col-6 col-md-4 col-lg-2">
+                <div className="card h-100 border-0 shadow-sm p-3 rounded-4 bg-white">
+                  <div
+                    className="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center mx-auto mb-2"
+                    style={{ width: "40px", height: "40px" }}
+                  >
+                    {item.step}
+                  </div>
+                  <h6 className="fw-bold mb-1 small">{item.title}</h6>
+                  <p className="text-muted" style={{ fontSize: "0.72rem" }}>{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Showcase Projects Preview */}
+      <section className="py-5 bg-white border-top">
+        <div className="container py-2">
+          <div className="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-3">
+            <div>
+              <span className="badge bg-primary-subtle text-primary fw-semibold mb-2 px-3 py-1.5 rounded-pill" style={{ fontSize: "0.74rem" }}>
+                Campus Collaboration Hub
+              </span>
+              <h2 className="fw-bold mb-1 text-dark" style={{ letterSpacing: "-0.5px" }}>Featured Campus Projects</h2>
+              <p className="text-muted small mb-0">Browse real student teams actively collaborating and recruiting members.</p>
+            </div>
+            <Link to="/create-project" className="btn btn-primary-sm btn-sm shadow-sm rounded-pill px-4">
+              <i className="bi bi-plus-circle me-1"></i> Post New Project
+            </Link>
+          </div>
+
+          <div className="row g-4">
+            {projects.map((proj) => (
+              <div key={proj.id} className="col-12 col-md-6 col-lg-4 d-flex">
+                <ProjectCard project={proj} students={students} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// 9. LOGIN PAGE
+function LoginPage() {
+  const { loginUser } = useContext(AppContext);
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ email: "arjun@skillmesh.edu", password: "password123" });
+  const [errors, setErrors] = useState({});
+  const [serverMsg, setServerMsg] = useState("");
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: null });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errs = validateLoginForm(formData.email, formData.password);
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+
+    const success = await loginUser(formData.email, formData.password);
+    if (success) {
+      navigate("/dashboard");
+    } else {
+      setServerMsg("Invalid student email or password. Try arjun@skillmesh.edu (password123)");
+    }
+  };
+
+  return (
+    <div className="container py-5">
+      <div className="row justify-content-center py-4">
+        <div className="col-md-6 col-lg-5">
+          <div className="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
+            <div className="text-center mb-4">
+              <div className="rounded-circle bg-primary-subtle text-primary d-inline-flex p-3 mb-2">
+                <i className="bi bi-shield-lock-fill fs-3"></i>
+              </div>
+              <h3 className="fw-bold">Student Login</h3>
+              <p className="text-muted small">Access your SkillMesh project dashboard</p>
+            </div>
+
+            {serverMsg && (
+              <div className="alert alert-danger py-2 small" role="alert">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i> {serverMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <div className="mb-3">
+                <label className="form-label">College Email Address</label>
+                <div className="input-group">
+                  <span className="input-group-text bg-light"><i className="bi bi-envelope"></i></span>
+                  <input
+                    type="email"
+                    name="email"
+                    className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                    placeholder="name@skillmesh.edu"
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                </div>
+                {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
+              </div>
+
+              <div className="mb-4">
+                <label className="form-label">Password</label>
+                <div className="input-group">
+                  <span className="input-group-text bg-light"><i className="bi bi-key"></i></span>
+                  <input
+                    type="password"
+                    name="password"
+                    className={`form-control ${errors.password ? "is-invalid" : ""}`}
+                    placeholder="Enter password"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                </div>
+                {errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
+              </div>
+
+              <button type="submit" className="btn btn-primary-sm w-100 justify-content-center py-2 mb-3">
+                <i className="bi bi-box-arrow-in-right"></i> Login to SkillMesh
+              </button>
+
+              <div className="text-center small text-muted">
+                Don't have an account?{" "}
+                <Link to="/register" className="fw-bold text-primary">Register Here</Link>
+              </div>
+
+              <div className="mt-4 p-2 bg-light rounded text-muted" style={{ fontSize: "0.75rem" }}>
+                <strong>Demo Accounts:</strong><br />
+                • Arjun (Lead): arjun@skillmesh.edu / password123<br />
+                • Priya (UI/UX): priya@skillmesh.edu / password123<br />
+                • Rahul (Agri): rahul@skillmesh.edu / password123
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 10. REGISTER PAGE
+function RegisterPage() {
+  const { registerUser } = useContext(AppContext);
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirm_password: "",
+    department: "",
+    year: "",
+    role: ""
+  });
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: null });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errs = validateRegisterForm(formData);
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+
+    await registerUser(formData);
+    navigate("/profile");
+  };
+
+  return (
+    <div className="container py-5">
+      <div className="row justify-content-center">
+        <div className="col-lg-8">
+          <div className="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
+            <div className="text-center mb-4">
+              <div className="rounded-circle bg-primary-subtle text-primary d-inline-flex p-3 mb-2">
+                <i className="bi bi-person-plus-fill fs-3"></i>
+              </div>
+              <h3 className="fw-bold">Student Registration</h3>
+              <p className="text-muted small">Create your profile to join projects and find teammates</p>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="row g-3 mb-3">
+                <div className="col-md-6">
+                  <label className="form-label">Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                    placeholder="e.g. Ananya Sharma"
+                    value={formData.name}
+                    onChange={handleChange}
+                  />
+                  {errors.name && <div className="text-danger small mt-1">{errors.name}</div>}
+                </div>
+
+                <div className="col-md-6">
+                  <label className="form-label">College Email Address</label>
+                  <input
+                    type="email"
+                    name="email"
+                    className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                    placeholder="name@college.edu"
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                  {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
+                </div>
+
+                <div className="col-md-6">
+                  <label className="form-label">Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    className={`form-control ${errors.password ? "is-invalid" : ""}`}
+                    placeholder="At least 6 characters"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                  {errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
+                </div>
+
+                <div className="col-md-6">
+                  <label className="form-label">Confirm Password</label>
+                  <input
+                    type="password"
+                    name="confirm_password"
+                    className={`form-control ${errors.confirm_password ? "is-invalid" : ""}`}
+                    placeholder="Re-enter password"
+                    value={formData.confirm_password}
+                    onChange={handleChange}
+                  />
+                  {errors.confirm_password && <div className="text-danger small mt-1">{errors.confirm_password}</div>}
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Department</label>
+                  <select
+                    name="department"
+                    className={`form-select ${errors.department ? "is-invalid" : ""}`}
+                    value={formData.department}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select Department</option>
+                    {DEPARTMENTS.map((dept, idx) => (
+                      <option key={idx} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                  {errors.department && <div className="text-danger small mt-1">{errors.department}</div>}
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Academic Year</label>
+                  <select
+                    name="year"
+                    className={`form-select ${errors.year ? "is-invalid" : ""}`}
+                    value={formData.year}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select Year</option>
+                    {YEAR_OPTIONS.map((yr, idx) => (
+                      <option key={idx} value={yr}>{yr}</option>
+                    ))}
+                  </select>
+                  {errors.year && <div className="text-danger small mt-1">{errors.year}</div>}
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Primary Role</label>
+                  <select
+                    name="role"
+                    className={`form-select ${errors.role ? "is-invalid" : ""}`}
+                    value={formData.role}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select Role</option>
+                    {ROLE_OPTIONS.map((role, idx) => (
+                      <option key={idx} value={role}>{role}</option>
+                    ))}
+                  </select>
+                  {errors.role && <div className="text-danger small mt-1">{errors.role}</div>}
+                </div>
+              </div>
+
+              <div className="alert alert-info py-2 small mb-4">
+                <i className="bi bi-info-circle me-1"></i> You can add and rate your specific technical skills after registering on your Profile page.
+              </div>
+
+              <button type="submit" className="btn btn-primary-sm w-100 justify-content-center py-2 mb-3">
+                <i className="bi bi-check-circle"></i> Complete Registration
+              </button>
+
+              <div className="text-center small text-muted">
+                Already registered? <Link to="/login" className="fw-bold text-primary">Login here</Link>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 11. STUDENT DASHBOARD
+function StudentDashboard() {
+  const { currentUser, projects, students, requests } = useContext(AppContext);
+
+  const myProjects = useMemo(() => {
+    if (!currentUser) return [];
+    return projects.filter((p) => p.created_by === currentUser.id || p.team_members.includes(currentUser.id));
+  }, [projects, currentUser]);
+
+  const avgSkillScore = useMemo(() => {
+    if (!currentUser || !currentUser.skills || currentUser.skills.length === 0) return 0;
+    const total = currentUser.skills.reduce((sum, s) => sum + s.level, 0);
+    return Math.round(total / currentUser.skills.length);
+  }, [currentUser]);
+
+  const incomingRequests = useMemo(() => {
+    if (!currentUser) return [];
+    return requests.filter((r) => r.to_student_id === currentUser.id && r.status === "pending");
+  }, [requests, currentUser]);
+
+  return (
+    <div className="container py-4">
+      {/* Welcome Banner */}
+      <div className="card border-0 shadow-sm rounded-4 p-4 text-white mb-4" style={{ background: "linear-gradient(135deg, #0d47a1 0%, #1a6cf6 100%)" }}>
+        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div className="d-flex align-items-center gap-3">
+            <div
+              className="rounded-circle text-white fw-bold d-flex align-items-center justify-content-center shadow"
+              style={{
+                width: "64px",
+                height: "64px",
+                background: currentUser?.avatar_color || "#00b0ff",
+                fontSize: "1.5rem"
+              }}
+            >
+              {currentUser?.initials || getInitials(currentUser?.name)}
+            </div>
+            <div>
+              <h3 className="fw-bold mb-1">Welcome back, {currentUser?.name}!</h3>
+              <p className="mb-0 text-white-50 small">
+                {currentUser?.student_id} • {currentUser?.department} • {currentUser?.year}
+              </p>
+            </div>
+          </div>
+          <div className="d-flex gap-2">
+            <Link to="/create-project" className="btn btn-light text-primary fw-bold rounded-pill px-3">
+              + New Project
+            </Link>
+            <Link to="/profile" className="btn btn-outline-light rounded-pill px-3">
+              Edit Profile
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Metric Cards */}
+      <div className="row g-3 mb-4">
+        <div className="col-6 col-md-3">
+          <div className="card stat-card border-0 shadow-sm p-3">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <div className="text-muted small fw-semibold">Total Projects</div>
+                <div className="stat-number">{projects.length}</div>
+              </div>
+              <div className="p-3 bg-primary-subtle text-primary rounded-circle">
+                <i className="bi bi-folder-fill fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-6 col-md-3">
+          <div className="card stat-card border-0 shadow-sm p-3">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <div className="text-muted small fw-semibold">My Teams</div>
+                <div className="stat-number">{myProjects.length}</div>
+              </div>
+              <div className="p-3 bg-success-subtle text-success rounded-circle">
+                <i className="bi bi-people-fill fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-6 col-md-3">
+          <div className="card stat-card border-0 shadow-sm p-3">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <div className="text-muted small fw-semibold">Avg Skill Score</div>
+                <div className="stat-number">{avgSkillScore}%</div>
+              </div>
+              <div className="p-3 bg-warning-subtle text-warning-emphasis rounded-circle">
+                <i className="bi bi-award-fill fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-6 col-md-3">
+          <div className="card stat-card border-0 shadow-sm p-3">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <div className="text-muted small fw-semibold">Pending Requests</div>
+                <div className="stat-number text-danger">{incomingRequests.length}</div>
+              </div>
+              <div className="p-3 bg-danger-subtle text-danger rounded-circle">
+                <i className="bi bi-bell-fill fs-4"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Dashboard Content */}
+      <div className="row g-4">
+        {/* Left column: My Projects */}
+        <div className="col-lg-8">
+          <div className="card sm-card border-0 shadow-sm p-4 mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="fw-bold mb-0">My Active Projects & Teams</h5>
+              <Link to="/create-project" className="btn btn-sm btn-outline-primary rounded-pill">
+                Create Project
+              </Link>
+            </div>
+
+            {myProjects.length === 0 ? (
+              <div className="text-center py-4 text-muted">
+                <i className="bi bi-folder2-open display-4 text-muted"></i>
+                <p className="mt-2">You haven't created or joined any projects yet.</p>
+                <Link to="/create-project" className="btn btn-primary-sm btn-sm">Create Your First Project</Link>
+              </div>
+            ) : (
+              <div className="row g-3">
+                {myProjects.map((proj) => (
+                  <div key={proj.id} className="col-12">
+                    <ProjectCard project={proj} students={students} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right column: Quick Profile & Recommended Peers */}
+        <div className="col-lg-4">
+          {/* User Skills Snapshot */}
+          <div className="card sm-card border-0 shadow-sm p-4 mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h6 className="fw-bold mb-0">My Top Skills</h6>
+              <Link to="/profile" className="small text-primary fw-semibold">Edit Skills</Link>
+            </div>
+            {currentUser?.skills && currentUser.skills.slice(0, 4).map((sk, idx) => (
+              <SkillProgress
+                key={idx}
+                name={sk.name}
+                currentCoverage={sk.level}
+                requiredLevel={70}
+                showDetails={false}
+              />
+            ))}
+          </div>
+
+          {/* Quick Find Teammates */}
+          <div className="card sm-card border-0 shadow-sm p-4">
+            <h6 className="fw-bold mb-3">Explore Recommended Peers</h6>
+            <div className="d-flex flex-column gap-3">
+              {students
+                .filter((s) => s.id !== currentUser?.id)
+                .slice(0, 3)
+                .map((peer) => (
+                  <div key={peer.id} className="d-flex align-items-center gap-3 p-2 rounded border bg-light">
+                    <div
+                      className="student-avatar text-white fw-bold"
+                      style={{ width: "40px", height: "40px", fontSize: "0.9rem", background: peer.avatar_color }}
+                    >
+                      {peer.initials}
+                    </div>
+                    <div className="flex-grow-1 min-w-0">
+                      <div className="fw-bold text-dark text-truncate small">{peer.name}</div>
+                      <div className="text-muted" style={{ fontSize: "0.75rem" }}>{peer.role}</div>
+                    </div>
+                    <Link to="/students" className="btn btn-sm btn-outline-primary rounded-pill px-2 py-1" style={{ fontSize: "0.7rem" }}>
+                      View
+                    </Link>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 12. STUDENT PROFILE PAGE
+function StudentProfilePage() {
+  const { currentUser, updateProfileSkills, updateProfileDetails } = useContext(AppContext);
+  const [profileData, setProfileData] = useState({
+    name: currentUser?.name || "",
+    department: currentUser?.department || "",
+    year: currentUser?.year || "",
+    role: currentUser?.role || ""
+  });
+  const [skills, setSkills] = useState(currentUser?.skills || []);
+  const [newSkill, setNewSkill] = useState({ name: "ReactJS", levelLabel: "Advanced" });
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      setProfileData({
+        name: currentUser.name,
+        department: currentUser.department,
+        year: currentUser.year,
+        role: currentUser.role
+      });
+      setSkills(currentUser.skills || []);
+    }
+  }, [currentUser]);
+
+  const handleAddSkill = (e) => {
+    e.preventDefault();
+    if (!newSkill.name) return;
+    const numericLevel = SKILL_LEVELS[newSkill.levelLabel] || 75;
+    const updated = [...skills.filter((s) => s.name.toLowerCase() !== newSkill.name.toLowerCase()), {
+      name: newSkill.name,
+      level: numericLevel,
+      levelLabel: newSkill.levelLabel
+    }];
+    setSkills(updated);
+    updateProfileSkills(updated);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
+
+  const handleRemoveSkill = (skillName) => {
+    const updated = skills.filter((s) => s.name !== skillName);
+    setSkills(updated);
+    updateProfileSkills(updated);
+  };
+
+  const handleSaveDetails = (e) => {
+    e.preventDefault();
+    updateProfileDetails(profileData);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
+
+  return (
+    <div className="container py-4">
+      <div className="row g-4">
+        {/* Left Column: Profile Card */}
+        <div className="col-lg-4">
+          <div className="card sm-card border-0 shadow-sm p-4 text-center mb-4">
+            <div
+              className="mx-auto rounded-circle text-white fw-bold d-flex align-items-center justify-content-center shadow mb-3"
+              style={{
+                width: "90px",
+                height: "90px",
+                fontSize: "2rem",
+                background: currentUser?.avatar_color || "var(--primary)"
+              }}
+            >
+              {currentUser?.initials || getInitials(currentUser?.name)}
+            </div>
+            <h4 className="fw-bold mb-1 text-dark">{currentUser?.name}</h4>
+            <div className="badge bg-primary-subtle text-primary mb-2 px-3 py-1">{currentUser?.role}</div>
+            <p className="text-muted small mb-3">
+              {currentUser?.student_id} • {currentUser?.department}<br />
+              {currentUser?.year}
+            </p>
+            <div className="p-3 bg-light rounded text-start small">
+              <div className="d-flex justify-content-between mb-1">
+                <span className="text-muted">Verified Student:</span>
+                <span className="fw-bold text-success"><i className="bi bi-patch-check-fill"></i> Yes</span>
+              </div>
+              <div className="d-flex justify-content-between mb-1">
+                <span className="text-muted">Total Skills:</span>
+                <span className="fw-bold text-dark">{skills.length}</span>
+              </div>
+              <div className="d-flex justify-content-between">
+                <span className="text-muted">Privacy:</span>
+                <span className="fw-bold text-primary">Protected (No Phone)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Edit Profile & Manage Skills */}
+        <div className="col-lg-8">
+          {saveSuccess && (
+            <div className="alert alert-success alert-dismissible fade show" role="alert">
+              <i className="bi bi-check-circle-fill me-2"></i> Profile and skills successfully saved!
+            </div>
+          )}
+
+          {/* Academic Info Form */}
+          <div className="card sm-card border-0 shadow-sm p-4 mb-4">
+            <h5 className="fw-bold mb-3">Academic & Role Details</h5>
+            <form onSubmit={handleSaveDetails}>
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <label className="form-label">Full Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={profileData.name}
+                    onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">Primary Role</label>
+                  <select
+                    className="form-select"
+                    value={profileData.role}
+                    onChange={(e) => setProfileData({ ...profileData, role: e.target.value })}
+                  >
+                    {ROLE_OPTIONS.map((r, i) => <option key={i} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">Department</label>
+                  <select
+                    className="form-select"
+                    value={profileData.department}
+                    onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
+                  >
+                    {DEPARTMENTS.map((d, i) => <option key={i} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">Year of Study</label>
+                  <select
+                    className="form-select"
+                    value={profileData.year}
+                    onChange={(e) => setProfileData({ ...profileData, year: e.target.value })}
+                  >
+                    {YEAR_OPTIONS.map((y, i) => <option key={i} value={y}>{y}</option>)}
+                  </select>
+                </div>
+              </div>
+              <button type="submit" className="btn btn-primary-sm btn-sm mt-3">
+                Save Academic Details
+              </button>
+            </form>
+          </div>
+
+          {/* Skills Management */}
+          <div className="card sm-card border-0 shadow-sm p-4">
+            <h5 className="fw-bold mb-3">Technical & Domain Skills</h5>
+
+            {/* Add Skill Form */}
+            <form onSubmit={handleAddSkill} className="p-3 bg-light rounded-3 mb-4">
+              <div className="row g-2 align-items-end">
+                <div className="col-md-5">
+                  <label className="form-label small fw-semibold">Skill Name</label>
+                  <select
+                    className="form-select form-select-sm"
+                    value={newSkill.name}
+                    onChange={(e) => setNewSkill({ ...newSkill, name: e.target.value })}
+                  >
+                    {AVAILABLE_SKILLS.map((s, idx) => <option key={idx} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label small fw-semibold">Skill Level</label>
+                  <select
+                    className="form-select form-select-sm"
+                    value={newSkill.levelLabel}
+                    onChange={(e) => setNewSkill({ ...newSkill, levelLabel: e.target.value })}
+                  >
+                    <option value="Beginner">Beginner (25%)</option>
+                    <option value="Intermediate">Intermediate (55%)</option>
+                    <option value="Advanced">Advanced (80%)</option>
+                    <option value="Expert">Expert (95%)</option>
+                  </select>
+                </div>
+                <div className="col-md-3">
+                  <button type="submit" className="btn btn-primary-sm btn-sm w-100 justify-content-center">
+                    + Add / Update
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Current Skills List with Progress Bars */}
+            <div className="skills-list">
+              {skills.map((sk, idx) => (
+                <div key={idx} className="p-2 border rounded-3 mb-2 bg-white d-flex align-items-center justify-content-between gap-3">
+                  <div className="flex-grow-1">
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <span className="fw-bold text-dark small">{sk.name}</span>
+                      <span className="badge bg-primary-subtle text-primary" style={{ fontSize: "0.7rem" }}>
+                        {sk.levelLabel || (sk.level >= 90 ? "Expert" : sk.level >= 75 ? "Advanced" : "Intermediate")} ({sk.level}%)
+                      </span>
+                    </div>
+                    <div className="progress" style={{ height: "6px" }}>
+                      <div
+                        className="progress-bar bg-primary"
+                        style={{ width: `${sk.level}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-outline-danger btn-sm rounded-circle p-1"
+                    style={{ width: "28px", height: "28px", lineHeight: "1" }}
+                    onClick={() => handleRemoveSkill(sk.name)}
+                    title="Remove Skill"
+                  >
+                    <i className="bi bi-x"></i>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 13. CREATE PROJECT PAGE
+function CreateProjectPage() {
+  const { addProject, currentUser } = useContext(AppContext);
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    category: "AgriTech",
+    required_team_size: 4
+  });
+  const [selectedSkills, setSelectedSkills] = useState([
+    { name: "Frontend", required_level: 70 },
+    { name: "Backend", required_level: 75 },
+    { name: "Database", required_level: 70 }
+  ]);
+  const [newSkillName, setNewSkillName] = useState("UI/UX");
+  const [newSkillLevel, setNewSkillLevel] = useState(70);
+  const [errors, setErrors] = useState({});
+
+  const handleAddSkill = () => {
+    if (!newSkillName) return;
+    if (selectedSkills.some((s) => s.name.toLowerCase() === newSkillName.toLowerCase())) return;
+    setSelectedSkills([...selectedSkills, { name: newSkillName, required_level: parseInt(newSkillLevel) }]);
+  };
+
+  const handleRemoveSkill = (name) => {
+    setSelectedSkills(selectedSkills.filter((s) => s.name !== name));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const dataToValidate = {
+      ...formData,
+      required_skills: selectedSkills
+    };
+    const errs = validateProjectForm(dataToValidate);
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+
+    const newProj = await addProject({
+      ...formData,
+      required_team_size: parseInt(formData.required_team_size),
+      required_skills: selectedSkills,
+      created_by: currentUser?.id || 1,
+      team_members: currentUser ? [currentUser.id] : [1]
+    });
+
+    navigate(`/team-builder/${newProj.id}`);
+  };
+
+  return (
+    <div className="container py-5">
+      <div className="row justify-content-center">
+        <div className="col-lg-8">
+          <div className="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
+            <div className="text-center mb-4">
+              <div className="rounded-circle bg-primary-subtle text-primary d-inline-flex p-3 mb-2">
+                <i className="bi bi-folder-plus fs-3"></i>
+              </div>
+              <h3 className="fw-bold">Create New Project</h3>
+              <p className="text-muted small">Define your project requirements and skill parameters</p>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="mb-3">
+                <label className="form-label">Project Name</label>
+                <input
+                  type="text"
+                  className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                  placeholder="e.g. Smart Agriculture Platform"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+                {errors.name && <div className="text-danger small mt-1">{errors.name}</div>}
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Project Description</label>
+                <textarea
+                  rows="3"
+                  className={`form-control ${errors.description ? "is-invalid" : ""}`}
+                  placeholder="Describe your project goals, technologies, and target deliverables..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                ></textarea>
+                {errors.description && <div className="text-danger small mt-1">{errors.description}</div>}
+              </div>
+
+              <div className="row g-3 mb-4">
+                <div className="col-md-6">
+                  <label className="form-label">Project Category</label>
+                  <select
+                    className="form-select"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  >
+                    {PROJECT_CATEGORIES.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">Required Team Size (Students)</label>
+                  <input
+                    type="number"
+                    min="2"
+                    max="10"
+                    className={`form-control ${errors.required_team_size ? "is-invalid" : ""}`}
+                    value={formData.required_team_size}
+                    onChange={(e) => setFormData({ ...formData, required_team_size: e.target.value })}
+                  />
+                  {errors.required_team_size && <div className="text-danger small mt-1">{errors.required_team_size}</div>}
+                </div>
+              </div>
+
+              {/* Required Skills Section */}
+              <div className="mb-4">
+                <label className="form-label fw-bold">Required Project Skills & Thresholds</label>
+                {errors.required_skills && <div className="text-danger small mb-2">{errors.required_skills}</div>}
+
+                <div className="p-3 bg-light rounded-3 mb-3">
+                  <div className="row g-2 align-items-end">
+                    <div className="col-md-5">
+                      <label className="form-label small">Select Skill</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={newSkillName}
+                        onChange={(e) => setNewSkillName(e.target.value)}
+                      >
+                        {AVAILABLE_SKILLS.map((s, idx) => <option key={idx} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label small">Required Level</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={newSkillLevel}
+                        onChange={(e) => setNewSkillLevel(e.target.value)}
+                      >
+                        <option value="60">Basic (60%)</option>
+                        <option value="70">Intermediate (70%)</option>
+                        <option value="85">Advanced (85%)</option>
+                      </select>
+                    </div>
+                    <div className="col-md-3">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm w-100"
+                        onClick={handleAddSkill}
+                      >
+                        + Add Skill
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chips of added skills */}
+                <div className="d-flex flex-wrap gap-2">
+                  {selectedSkills.map((sk, idx) => (
+                    <div
+                      key={idx}
+                      className="badge bg-white text-dark border p-2 d-flex align-items-center gap-2 rounded-pill shadow-sm"
+                    >
+                      <span className="fw-bold">{sk.name}</span>
+                      <span className="badge bg-primary-subtle text-primary">Req: {sk.required_level}%</span>
+                      <button
+                        type="button"
+                        className="btn-close btn-close-sm"
+                        style={{ fontSize: "0.55rem" }}
+                        onClick={() => handleRemoveSkill(sk.name)}
+                      ></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary-sm w-100 justify-content-center py-2">
+                <i className="bi bi-rocket-takeoff"></i> Create Project & Launch Team Builder
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 14. PROJECT DETAILS PAGE
+function ProjectDetailsPage() {
+  const { id } = useParams();
+  const { projects, students } = useContext(AppContext);
+  const projId = id ? parseInt(id) : (projects[0]?.id || 1);
+  const project = projects.find((p) => p.id === projId) || projects[0];
+
+  if (!project) {
+    return (
+      <div className="container py-5 text-center">
+        <h4>Project not found.</h4>
+        <Link to="/dashboard" className="btn btn-primary-sm mt-3">Back to Dashboard</Link>
+      </div>
+    );
+  }
+
+  const teamMembers = students.filter((s) => project.team_members.includes(s.id));
+  const health = calculateTeamHealth(project, teamMembers);
+
+  return (
+    <div className="container py-4">
+      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+          <span className="badge bg-primary-subtle text-primary me-2">{project.category}</span>
+          <span className="badge bg-light text-muted border">{project.status}</span>
+          <h2 className="fw-bold mt-1 mb-0">{project.name}</h2>
+        </div>
+        <div className="d-flex gap-2">
+          <Link to={`/team-builder/${project.id}`} className="btn btn-primary-sm">
+            <i className="bi bi-cpu"></i> Launch Team Intelligence
+          </Link>
+        </div>
+      </div>
+
+      <div className="row g-4">
+        <div className="col-lg-8">
+          <div className="card sm-card border-0 shadow-sm p-4 mb-4">
+            <h5 className="fw-bold mb-2">Project Overview</h5>
+            <p className="text-muted">{project.description}</p>
+
+            <h5 className="fw-bold mt-4 mb-3">Required Technical Skills</h5>
+            <div className="row g-3">
+              {project.required_skills.map((rs, idx) => {
+                const cov = calculateSkillCoverage(rs.name, teamMembers);
+                return (
+                  <div key={idx} className="col-md-6">
+                    <SkillProgress
+                      name={rs.name}
+                      currentCoverage={cov}
+                      requiredLevel={rs.required_level}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Current Team Members */}
+          <div className="card sm-card border-0 shadow-sm p-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="fw-bold mb-0">Current Team Members ({teamMembers.length} / {project.required_team_size})</h5>
+              <Link to={`/team-builder/${project.id}`} className="btn btn-sm btn-outline-primary rounded-pill">
+                Modify Team
+              </Link>
+            </div>
+
+            <div className="row g-3">
+              {teamMembers.map((m) => (
+                <div key={m.id} className="col-md-6">
+                  <StudentCard student={m} isSelected={true} showAction={false} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="col-lg-4">
+          <TeamHealthCard
+            score={health}
+            memberCount={teamMembers.length}
+            requiredSize={project.required_team_size}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 15. TEAM BUILDER & TEAM INTELLIGENCE SHOWCASE
+function TeamBuilderPage({ initialTab = "intelligence" }) {
+  const { id } = useParams();
+  const { projects, students, toggleTeamMember, sendCollabRequest, currentUser } = useContext(AppContext);
+  const [activeTab, setActiveTab] = useState(initialTab); // 'intelligence' | 'builder' | 'gaps' | 'risks' | 'recommendations'
+  const [searchTerm, setSearchTerm] = useState("");
+  const [modalStudent, setModalStudent] = useState(null);
+  const [collabMsg, setCollabMsg] = useState("");
+  const [collabSent, setCollabSent] = useState(false);
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
+
+  const projId = id ? parseInt(id) : (projects[0]?.id || 1);
+  const project = projects.find((p) => p.id === projId) || projects[0];
+
+  if (!project) {
+    return (
+      <div className="container py-5 text-center">
+        <h4>Project not found.</h4>
+        <Link to="/dashboard" className="btn btn-primary-sm mt-3">Back to Dashboard</Link>
+      </div>
+    );
+  }
+
+  // Selected team objects
+  const teamMembers = students.filter((s) => project.team_members.includes(s.id));
+  
+  // Rule-based calculations (No AI/ML)
+  const teamHealth = calculateTeamHealth(project, teamMembers);
+  const risks = sortRisksByPriority(detectRisks(project, teamMembers));
+  const recommendations = getRecommendations(project, project.team_members, students);
+
+  // Filtered students for builder
+  const filteredStudents = students.filter((s) => {
+    const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.skills.some((sk) => sk.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchSearch;
+  });
+
+  const handleOpenCollabModal = (student) => {
+    setModalStudent(student);
+    setCollabMsg(`Hi ${student.name.split(" ")[0]}! We are working on "${project.name}" and would love to have your skills on our team.`);
+    setCollabSent(false);
+  };
+
+  const handleSendCollab = (e) => {
+    e.preventDefault();
+    if (!modalStudent) return;
+    sendCollabRequest({
+      from_student_id: currentUser?.id || 1,
+      to_student_id: modalStudent.id,
+      project_id: project.id,
+      message: collabMsg
+    });
+    setCollabSent(true);
+    setTimeout(() => {
+      setModalStudent(null);
+      setCollabSent(false);
+    }, 1500);
+  };
+
+  return (
+    <div className="container py-4">
+      {/* Top Header */}
+      <div className="card border-0 shadow-sm rounded-4 p-4 text-white mb-4" style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a6cf6 100%)" }}>
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <span className="badge bg-info text-dark fw-bold">Team Intelligence Active</span>
+              <span className="text-white-50 small">• {project.category}</span>
+            </div>
+            <h2 className="fw-bold mb-0">{project.name}</h2>
+            <div className="text-white-50 small mt-1">
+              Team: {teamMembers.length} / {project.required_team_size} Members Required
+            </div>
+          </div>
+
+          <div className="d-flex align-items-center gap-3 bg-white bg-opacity-10 p-3 rounded-3">
+            <div className="text-end">
+              <div className="text-white-50 small">Team Health Score</div>
+              <div className="h3 fw-bold mb-0 text-warning">{teamHealth}%</div>
+            </div>
+            <div
+              className="rounded-circle d-flex align-items-center justify-content-center bg-warning text-dark fw-bold"
+              style={{ width: "45px", height: "45px" }}
+            >
+              <i className="bi bi-activity fs-5"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <ul className="nav nav-pills nav-fill mb-4 p-1 bg-white rounded-pill shadow-sm border">
+        <li className="nav-item">
+          <button
+            className={`nav-link rounded-pill fw-semibold ${activeTab === "intelligence" ? "active bg-primary" : "text-muted"}`}
+            onClick={() => setActiveTab("intelligence")}
+          >
+            <i className="bi bi-speedometer2 me-1"></i> Team Intelligence
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link rounded-pill fw-semibold ${activeTab === "builder" ? "active bg-primary" : "text-muted"}`}
+            onClick={() => setActiveTab("builder")}
+          >
+            <i className="bi bi-people-fill me-1"></i> Team Builder ({teamMembers.length})
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link rounded-pill fw-semibold ${activeTab === "gaps" ? "active bg-primary" : "text-muted"}`}
+            onClick={() => setActiveTab("gaps")}
+          >
+            <i className="bi bi-graph-down-arrow me-1"></i> Skill Gap Analysis
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link rounded-pill fw-semibold ${activeTab === "risks" ? "active bg-primary" : "text-muted"}`}
+            onClick={() => setActiveTab("risks")}
+          >
+            <i className="bi bi-shield-exclamation me-1"></i> Risk Analysis ({risks.filter((r) => r.severity === "HIGH").length} High)
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link rounded-pill fw-semibold ${activeTab === "recommendations" ? "active bg-primary" : "text-muted"}`}
+            onClick={() => setActiveTab("recommendations")}
+          >
+            <i className="bi bi-magic me-1"></i> Recommended Students
+          </button>
+        </li>
+      </ul>
+
+      {/* TAB 1: TEAM INTELLIGENCE MAIN DASHBOARD */}
+      {activeTab === "intelligence" && (
+        <div className="animate-fade">
+          <div className="row g-4">
+            {/* Left: Overall Skill Coverage Breakdown */}
+            <div className="col-lg-8">
+              <div className="card sm-card border-0 shadow-sm p-4 mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <div>
+                    <h5 className="fw-bold mb-0">Project Skill Coverage Breakdown</h5>
+                    <p className="text-muted small mb-0">Calculated live across selected team members</p>
+                  </div>
+                  <span className="badge bg-light text-muted border">Rule-Based Analysis</span>
+                </div>
+
+                <div className="p-3 bg-light rounded-3 mb-4">
+                  {project.required_skills.map((rs, idx) => {
+                    const cov = calculateSkillCoverage(rs.name, teamMembers);
+                    return (
+                      <SkillProgress
+                        key={idx}
+                        name={rs.name}
+                        currentCoverage={cov}
+                        requiredLevel={rs.required_level}
+                      />
+                    );
+                  })}
+                </div>
+
+                <div className="alert alert-info py-2 small d-flex align-items-center gap-2 mb-0">
+                  <i className="bi bi-info-circle-fill"></i>
+                  <span>
+                    <strong>Rule-Based Formula:</strong> Coverage is the average skill rating of active team members compared with project targets.
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Risk Snippets */}
+              <div className="card sm-card border-0 shadow-sm p-4">
+                <h5 className="fw-bold mb-3">Detected Project Risks</h5>
+                {risks.slice(0, 2).map((r, idx) => (
+                  <RiskCard key={idx} risk={r} />
+                ))}
+                {risks.length > 2 && (
+                  <button
+                    className="btn btn-outline-primary btn-sm w-100 rounded-pill mt-2"
+                    onClick={() => setActiveTab("risks")}
+                  >
+                    View All {risks.length} Detected Risks <i className="bi bi-arrow-right"></i>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Health Card & Recommendations Preview */}
+            <div className="col-lg-4">
+              <TeamHealthCard
+                score={teamHealth}
+                memberCount={teamMembers.length}
+                requiredSize={project.required_team_size}
+              />
+
+              {/* Recommended Candidate Preview */}
+              <div className="card sm-card border-0 shadow-sm p-4 mt-4">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6 className="fw-bold mb-0">Top Recommended Peer</h6>
+                  <button className="btn btn-link btn-sm text-primary p-0" onClick={() => setActiveTab("recommendations")}>
+                    See All
+                  </button>
+                </div>
+
+                {recommendations.length > 0 ? (
+                  <RecommendationCard
+                    rec={recommendations[0]}
+                    onAddMember={(sId) => toggleTeamMember(project.id, sId)}
+                    onRequestCollab={handleOpenCollabModal}
+                  />
+                ) : (
+                  <p className="text-muted small mb-0">No unmet skill gaps found. Your team is fully balanced!</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: TEAM BUILDER */}
+      {activeTab === "builder" && (
+        <div className="animate-fade">
+          {/* Selected Team Members Tray */}
+          <div className="card sm-card border-0 shadow-sm p-4 mb-4 bg-light">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h5 className="fw-bold mb-0 text-dark">
+                  Selected Team Members ({teamMembers.length} / {project.required_team_size})
+                </h5>
+                <span className="text-muted small">Add or remove students to recalculate intelligence</span>
+              </div>
+              <button className="btn btn-primary-sm btn-sm" onClick={() => setActiveTab("intelligence")}>
+                Calculate Intelligence <i className="bi bi-arrow-right"></i>
+              </button>
+            </div>
+
+            <div className="row g-3">
+              {teamMembers.map((student) => (
+                <div key={student.id} className="col-md-6 col-lg-4">
+                  <StudentCard
+                    student={student}
+                    isSelected={true}
+                    onRemove={(sId) => toggleTeamMember(project.id, sId)}
+                  />
+                </div>
+              ))}
+              {teamMembers.length === 0 && (
+                <div className="col-12 text-center py-3 text-muted">
+                  No members added yet. Add students from the pool below.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Student Pool Search */}
+          <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <h5 className="fw-bold mb-0">Available Student Pool</h5>
+            <div className="input-group" style={{ maxWidth: "300px" }}>
+              <span className="input-group-text bg-white"><i className="bi bi-search"></i></span>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by name, role, skill..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="row g-4">
+            {filteredStudents.map((student) => {
+              const inTeam = project.team_members.includes(student.id);
+              return (
+                <div key={student.id} className="col-md-6 col-lg-4">
+                  <StudentCard
+                    student={student}
+                    isSelected={inTeam}
+                    onAdd={(sId) => toggleTeamMember(project.id, sId)}
+                    onRemove={(sId) => toggleTeamMember(project.id, sId)}
+                    onRequestCollab={handleOpenCollabModal}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: SKILL GAP ANALYSIS */}
+      {activeTab === "gaps" && (
+        <div className="animate-fade">
+          <div className="card sm-card border-0 shadow-sm p-4 mb-4">
+            <h4 className="fw-bold mb-2">Detailed Skill Gap Diagnostics</h4>
+            <p className="text-muted">
+              Identifies missing and underperforming skill areas by contrasting current team capability with project targets.
+            </p>
+
+            <div className="row g-3 mb-4">
+              {project.required_skills.map((rs, idx) => {
+                const cov = calculateSkillCoverage(rs.name, teamMembers);
+                const candidates = students.filter(
+                  (s) => !project.team_members.includes(s.id) && s.skills && s.skills.some((sk) => isSkillMatch(sk.name, rs.name) && sk.level >= 50)
+                );
+                return (
+                  <div key={idx} className="col-md-6 col-lg-4">
+                    <SkillGapCard
+                      skill={rs}
+                      coverage={cov}
+                      required={rs.required_level}
+                      candidateStudents={candidates}
+                      onAddStudent={(stId) => toggleTeamMember(project.id, stId)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            <h5 className="fw-bold mb-3 mt-4">Tabular Skill Gap Matrix</h5>
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Required Skill</th>
+                    <th>Required Level</th>
+                    <th>Current Team Coverage</th>
+                    <th>Coverage Gap</th>
+                    <th>Status</th>
+                    <th>Actionable Recommendation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {project.required_skills.map((rs, idx) => {
+                    const cov = calculateSkillCoverage(rs.name, teamMembers);
+                    const gap = Math.max(0, rs.required_level - cov);
+                    const status = getSkillStatus(cov, rs.required_level);
+
+                    return (
+                      <tr key={idx}>
+                        <td className="fw-bold">{rs.name}</td>
+                        <td>{rs.required_level}%</td>
+                        <td>
+                          <div className="d-flex align-items-center gap-2">
+                            <span className="fw-semibold">{cov}%</span>
+                            <div className="progress flex-grow-1" style={{ height: "6px", width: "80px" }}>
+                              <div
+                                className={`progress-bar ${getProgressBarColor(cov, rs.required_level)}`}
+                                style={{ width: `${cov}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className={gap > 0 ? "text-danger fw-bold" : "text-success fw-bold"}>
+                          {gap > 0 ? `-${gap}%` : "None (Met)"}
+                        </td>
+                        <td>
+                          <span className={`badge bg-${status.variant} rounded-pill`}>
+                            {status.label}
+                          </span>
+                        </td>
+                        <td className="small text-muted">
+                          {gap === 0
+                            ? "Sufficiently covered by active members."
+                            : cov === 0
+                            ? `Recruit a dedicated ${rs.name} specialist immediately.`
+                            : `Add overlapping ${rs.name} peer to reach required threshold.`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: RISK ANALYSIS */}
+      {activeTab === "risks" && (
+        <div className="animate-fade">
+          <div className="card sm-card border-0 shadow-sm p-4 mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h4 className="fw-bold mb-0">Project Risk Detection</h4>
+                <p className="text-muted small mb-0">Rule-based vulnerability analysis across dependencies and headcount</p>
+              </div>
+              <span className="badge bg-danger rounded-pill px-3 py-2">
+                {risks.filter((r) => r.severity === "HIGH").length} Critical Risks Flagged
+              </span>
+            </div>
+
+            <div className="row g-3">
+              {risks.map((risk, idx) => (
+                <div key={idx} className="col-md-6">
+                  <RiskCard risk={risk} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: STUDENT RECOMMENDATIONS */}
+      {activeTab === "recommendations" && (
+        <div className="animate-fade">
+          <div className="card sm-card border-0 shadow-sm p-4 mb-4">
+            <h4 className="fw-bold mb-2">Recommended Student Candidates</h4>
+            <p className="text-muted">
+              Ranked with transparent compatibility formula: <strong>Skill Match (70%) + Role Alignment (20%) + Domain Fit (10%)</strong>.
+            </p>
+
+            {recommendations.length === 0 ? (
+              <div className="text-center py-5">
+                <i className="bi bi-check-circle-fill text-success display-4"></i>
+                <h5 className="fw-bold mt-2">No Gaps Detected!</h5>
+                <p className="text-muted">Your current team covers all required skills satisfactorily.</p>
+              </div>
+            ) : (
+              <div className="row g-4">
+                {recommendations.map((rec, idx) => (
+                  <div key={idx} className="col-md-6 col-lg-4">
+                    <RecommendationCard
+                      rec={rec}
+                      onAddMember={(sId) => toggleTeamMember(project.id, sId)}
+                      onRequestCollab={handleOpenCollabModal}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Collaboration Request */}
+      {modalStudent && (
+        <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4 border-0 shadow-lg">
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">Request Collaboration</h5>
+                <button type="button" className="btn-close" onClick={() => setModalStudent(null)}></button>
+              </div>
+              <div className="modal-body">
+                {collabSent ? (
+                  <div className="text-center py-4 text-success">
+                    <i className="bi bi-check-circle-fill display-4"></i>
+                    <h5 className="fw-bold mt-2">Request Sent Successfully!</h5>
+                    <p className="small text-muted">The student will see your invitation in their Requests dashboard.</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSendCollab}>
+                    <div className="d-flex align-items-center gap-3 p-3 bg-light rounded-3 mb-3">
+                      <div
+                        className="student-avatar text-white fw-bold"
+                        style={{ width: "45px", height: "45px", background: modalStudent.avatar_color }}
+                      >
+                        {modalStudent.initials}
+                      </div>
+                      <div>
+                        <div className="fw-bold text-dark">{modalStudent.name}</div>
+                        <div className="small text-muted">{modalStudent.department} • {modalStudent.role}</div>
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label small fw-semibold">Personalized Invitation Message</label>
+                      <textarea
+                        rows="3"
+                        className="form-control"
+                        value={collabMsg}
+                        onChange={(e) => setCollabMsg(e.target.value)}
+                        required
+                      ></textarea>
+                    </div>
+
+                    <div className="alert alert-info py-2 small mb-3">
+                      <i className="bi bi-shield-lock-fill me-1"></i> Privacy Protected: Student contact numbers are kept private until invitation is accepted.
+                    </div>
+
+                    <div className="d-flex justify-content-end gap-2">
+                      <button type="button" className="btn btn-light rounded-pill px-3" onClick={() => setModalStudent(null)}>
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn btn-primary-sm rounded-pill px-4">
+                        <i className="bi bi-send"></i> Send Invitation
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 16. EXPLORE STUDENTS DIRECTORY PAGE
+function ExploreStudentsPage() {
+  const { students, sendCollabRequest, currentUser, projects } = useContext(AppContext);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDept, setSelectedDept] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [modalStudent, setModalStudent] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(projects[0]?.id || 1);
+  const [collabMsg, setCollabMsg] = useState("");
+  const [collabSent, setCollabSent] = useState(false);
+
+  const filteredStudents = students.filter((s) => {
+    const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.skills.some((sk) => sk.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchDept = selectedDept ? s.department === selectedDept : true;
+    const matchRole = selectedRole ? s.role === selectedRole : true;
+    return matchSearch && matchDept && matchRole;
+  });
+
+  const handleOpenCollab = (student) => {
+    setModalStudent(student);
+    setCollabMsg(`Hi ${student.name.split(" ")[0]}! I'd like to invite you to collaborate on our college project.`);
+    setCollabSent(false);
+  };
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!modalStudent) return;
+    sendCollabRequest({
+      from_student_id: currentUser?.id || 1,
+      to_student_id: modalStudent.id,
+      project_id: parseInt(selectedProject),
+      message: collabMsg
+    });
+    setCollabSent(true);
+    setTimeout(() => {
+      setModalStudent(null);
+      setCollabSent(false);
+    }, 1500);
+  };
+
+  return (
+    <div className="container py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h3 className="fw-bold mb-1">Student Talent Directory</h3>
+          <p className="text-muted small mb-0">Discover skilled peers across departments for project teams</p>
+        </div>
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="card sm-card border-0 shadow-sm p-3 mb-4 bg-white">
+        <div className="row g-2">
+          <div className="col-md-4">
+            <div className="input-group">
+              <span className="input-group-text bg-light"><i className="bi bi-search"></i></span>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by name or skill..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="col-md-4">
+            <select
+              className="form-select"
+              value={selectedDept}
+              onChange={(e) => setSelectedDept(e.target.value)}
+            >
+              <option value="">All Departments</option>
+              {DEPARTMENTS.map((d, i) => <option key={i} value={d}>{d}</option>)}
+            </select>
+          </div>
+          <div className="col-md-4">
+            <select
+              className="form-select"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+            >
+              <option value="">All Roles</option>
+              {ROLE_OPTIONS.map((r, i) => <option key={i} value={r}>{r}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Students Grid */}
+      <div className="row g-4">
+        {filteredStudents.map((student) => (
+          <div key={student.id} className="col-md-6 col-lg-4">
+            <StudentCard
+              student={student}
+              onRequestCollab={handleOpenCollab}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Modal: Collaboration Request */}
+      {modalStudent && (
+        <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4 border-0 shadow-lg">
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">Request Collaboration</h5>
+                <button type="button" className="btn-close" onClick={() => setModalStudent(null)}></button>
+              </div>
+              <div className="modal-body">
+                {collabSent ? (
+                  <div className="text-center py-4 text-success">
+                    <i className="bi bi-check-circle-fill display-4"></i>
+                    <h5 className="fw-bold mt-2">Request Sent Successfully!</h5>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSend}>
+                    <div className="mb-3">
+                      <label className="form-label small fw-semibold">Select Target Project</label>
+                      <select
+                        className="form-select"
+                        value={selectedProject}
+                        onChange={(e) => setSelectedProject(e.target.value)}
+                      >
+                        {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label small fw-semibold">Message</label>
+                      <textarea
+                        rows="3"
+                        className="form-control"
+                        value={collabMsg}
+                        onChange={(e) => setCollabMsg(e.target.value)}
+                        required
+                      ></textarea>
+                    </div>
+
+                    <div className="d-flex justify-content-end gap-2">
+                      <button type="button" className="btn btn-light rounded-pill" onClick={() => setModalStudent(null)}>
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn btn-primary-sm rounded-pill">
+                        Send Request
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 17. COLLABORATION REQUESTS PAGE
+function CollaborationRequestsPage() {
+  const { requests, students, projects, respondToRequest, currentUser } = useContext(AppContext);
+
+  const myRequests = requests.filter(
+    (r) => r.to_student_id === currentUser?.id || r.from_student_id === currentUser?.id
+  );
+
+  return (
+    <div className="container py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h3 className="fw-bold mb-1">Collaboration Requests</h3>
+          <p className="text-muted small mb-0">Manage incoming and outgoing team invitations</p>
+        </div>
+      </div>
+
+      <div className="row g-4">
+        <div className="col-lg-8">
+          <div className="card sm-card border-0 shadow-sm p-4">
+            <h5 className="fw-bold mb-3">All Invitations ({myRequests.length})</h5>
+
+            {myRequests.length === 0 ? (
+              <div className="text-center py-5 text-muted">
+                <i className="bi bi-inbox display-4"></i>
+                <p className="mt-2">No collaboration requests at this time.</p>
+              </div>
+            ) : (
+              <div className="d-flex flex-column gap-3">
+                {myRequests.map((req) => {
+                  const fromStudent = students.find((s) => s.id === req.from_student_id);
+                  const toStudent = students.find((s) => s.id === req.to_student_id);
+                  const project = projects.find((p) => p.id === req.project_id);
+                  const isIncoming = req.to_student_id === currentUser?.id;
+
+                  return (
+                    <div key={req.id} className="card border p-3 rounded-3 shadow-sm">
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <div className="d-flex align-items-center gap-2">
+                          <span className={`badge ${isIncoming ? "bg-primary" : "bg-secondary"}`}>
+                            {isIncoming ? "Incoming" : "Sent"}
+                          </span>
+                          <span className="fw-bold text-dark">{project?.name || "College Project"}</span>
+                        </div>
+                        <span
+                          className={`badge rounded-pill ${
+                            req.status === "accepted"
+                              ? "bg-success"
+                              : req.status === "rejected"
+                              ? "bg-danger"
+                              : "bg-warning text-dark"
+                          }`}
+                        >
+                          {req.status.toUpperCase()}
+                        </span>
+                      </div>
+
+                      <p className="small text-muted mb-2">
+                        {isIncoming ? (
+                          <>From: <strong>{fromStudent?.name}</strong> ({fromStudent?.role})</>
+                        ) : (
+                          <>To: <strong>{toStudent?.name}</strong> ({toStudent?.role})</>
+                        )}
+                      </p>
+
+                      <div className="p-2 bg-light rounded small text-secondary mb-3">
+                        "{req.message}"
+                      </div>
+
+                      {isIncoming && req.status === "pending" && (
+                        <div className="d-flex gap-2 justify-content-end">
+                          <button
+                            className="btn btn-outline-danger btn-sm rounded-pill px-3"
+                            onClick={() => respondToRequest(req.id, "rejected")}
+                          >
+                            Decline
+                          </button>
+                          <button
+                            className="btn btn-success btn-sm rounded-pill px-3"
+                            onClick={() => respondToRequest(req.id, "accepted")}
+                          >
+                            Accept & Join Team
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="col-lg-4">
+          <div className="card sm-card border-0 shadow-sm p-4">
+            <h6 className="fw-bold mb-3">Collaboration Guidelines</h6>
+            <ul className="small text-muted ps-3 mb-0">
+              <li className="mb-2">Accepting an invitation automatically assigns you to the project team.</li>
+              <li className="mb-2">Team Intelligence recalculates instantly when members join.</li>
+              <li className="mb-2">Contact details are revealed only between mutual team members.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 18. FOOTER COMPONENT
+function Footer() {
+  return (
+    <footer className="sm-footer mt-auto">
+      <div className="container">
+        <div className="row g-4 mb-4">
+          <div className="col-md-5">
+            <div className="footer-brand mb-2">
+              Skill<span>Mesh</span>
+            </div>
+            <p className="small text-white-50 mb-2">
+              Project Team Intelligence Platform – Web Programming Academic Project (CS23531).
+              Calculates skill balance, highlights member dependencies, and recommends student peers with pure rule-based logic.
+            </p>
+          </div>
+          <div className="col-md-3">
+            <h6 className="text-white fw-bold mb-2">Syllabus Highlights</h6>
+            <ul className="list-unstyled small text-white-50">
+              <li>• HTML5 & CSS3 Flexbox</li>
+              <li>• ReactJS Hooks & Routing</li>
+              <li>• PHP & Relational Database</li>
+              <li>• Client & Server Validation</li>
+            </ul>
+          </div>
+          <div className="col-md-4">
+            <h6 className="text-white fw-bold mb-2">Quick Links</h6>
+            <div className="d-flex flex-wrap gap-2 small">
+              <Link to="/" className="text-white-50">Home</Link> •
+              <Link to="/dashboard" className="text-white-50">Dashboard</Link> •
+              <Link to="/create-project" className="text-white-50">Create Project</Link> •
+              <Link to="/students" className="text-white-50">Explore Students</Link>
+            </div>
+          </div>
+        </div>
+        <div className="border-top border-secondary border-opacity-25 pt-3 text-center small text-white-50">
+          © 2026 SkillMesh • Department of Computer Science & Engineering. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// 19. MAIN APP ROOT PROVIDER & ROUTER
+function App() {
+  const API_URL = (window.location.protocol === "file:") 
+    ? "http://127.0.0.1:8000/php/api.php" 
+    : "php/api.php";
+
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("skillmesh_user");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return SAMPLE_STUDENTS[0];
+  });
+  const [students, setStudents] = useState(() => SAMPLE_STUDENTS);
+  const [projects, setProjects] = useState(() => SAMPLE_PROJECTS);
+  const [requests, setRequests] = useState(() => SAMPLE_REQUESTS);
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    try { return localStorage.getItem("skillmesh_theme") === "dark"; } catch(e) { return false; }
+  });
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (darkMode) {
+      html.setAttribute("data-theme", "dark");
+    } else {
+      html.removeAttribute("data-theme");
+    }
+    try { localStorage.setItem("skillmesh_theme", darkMode ? "dark" : "light"); } catch(e) {}
+  }, [darkMode]);
+
+  const toggleDarkMode = () => setDarkMode(prev => !prev);
+
+  // When React app successfully mounts, hide the HTML loading spinner
+  useEffect(() => {
+    const loadingScreen = document.getElementById("loading-screen");
+    if (loadingScreen) {
+      loadingScreen.style.setProperty("display", "none", "important");
+      loadingScreen.remove();
+    }
+  }, []);
+
+  // Fetch live backend data with fallback to sample data
+  useEffect(() => {
+    let isMounted = true;
+    const fetchBackendData = async () => {
+      try {
+        const [studRes, projRes, reqRes] = await Promise.all([
+          fetch(`${API_URL}?action=get_students`).then(r => r.json()).catch(() => null),
+          fetch(`${API_URL}?action=get_projects`).then(r => r.json()).catch(() => null),
+          fetch(`${API_URL}?action=get_requests`).then(r => r.json()).catch(() => null)
+        ]);
+
+        if (!isMounted) return;
+
+        let connected = false;
+        if (studRes && studRes.status === "success" && Array.isArray(studRes.data) && studRes.data.length > 0) {
+          setStudents(studRes.data);
+          connected = true;
+          // Sync currentUser with live student data if present
+          setCurrentUser(prev => {
+            if (!prev) return studRes.data[0];
+            const match = studRes.data.find(s => s.id === prev.id || s.email.toLowerCase() === prev.email.toLowerCase());
+            return match || prev;
+          });
+        }
+        if (projRes && projRes.status === "success" && Array.isArray(projRes.data) && projRes.data.length > 0) {
+          setProjects(projRes.data);
+          connected = true;
+        }
+        if (reqRes && reqRes.status === "success" && Array.isArray(reqRes.data)) {
+          setRequests(reqRes.data);
+        }
+
+        setIsBackendConnected(connected);
+      } catch (err) {
+        console.warn("Operating in Standalone Fallback Mode (Sample Data):", err);
+      }
+    };
+
+    fetchBackendData();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Authentication Handlers
+  const loginUser = async (email, password) => {
+    try {
+      const res = await fetch(`${API_URL}?action=login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password })
+      });
+      const data = await res.json();
+      if (data && data.status === "success" && data.data) {
+        setCurrentUser(data.data);
+        try { sessionStorage.setItem("skillmesh_user", JSON.stringify(data.data)); } catch (e) {}
+        setIsBackendConnected(true);
+        return true;
+      }
+    } catch (e) {
+      console.warn("Backend login failed or unreachable, checking fallback data...", e);
+    }
+
+    // Fallback: in-memory student lookup
+    const found = students.find((s) => s.email.toLowerCase() === email.trim().toLowerCase());
+    if (found) {
+      setCurrentUser(found);
+      try { sessionStorage.setItem("skillmesh_user", JSON.stringify(found)); } catch (e) {}
+      return true;
+    }
+    return false;
+  };
+
+  const logoutUser = () => {
+    setCurrentUser(null);
+    try { sessionStorage.removeItem("skillmesh_user"); } catch (e) {}
+  };
+
+  const registerUser = async (data) => {
+    try {
+      const res = await fetch(`${API_URL}?action=register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const resData = await res.json();
+      if (resData && resData.status === "success" && resData.data) {
+        const newStudent = resData.data;
+        setStudents(prev => [...prev, newStudent]);
+        setCurrentUser(newStudent);
+        try { sessionStorage.setItem("skillmesh_user", JSON.stringify(newStudent)); } catch (e) {}
+        setIsBackendConnected(true);
+        return newStudent;
+      }
+    } catch (e) {
+      console.warn("Backend register failed or unreachable, falling back to local state...", e);
+    }
+
+    // Fallback: in-memory registration
+    const newId = students.length + 1;
+    const newStudent = {
+      id: newId,
+      name: data.name,
+      initials: getInitials(data.name),
+      student_id: `CS220${newId < 10 ? "0" + newId : newId}`,
+      department: data.department,
+      year: data.year,
+      role: data.role,
+      email: data.email,
+      avatar_color: "#1a6cf6",
+      skills: [
+        { name: "Frontend", level: 80, levelLabel: "Advanced" },
+        { name: "JavaScript", level: 75, levelLabel: "Advanced" }
+      ]
+    };
+    setStudents(prev => [...prev, newStudent]);
+    setCurrentUser(newStudent);
+    try { sessionStorage.setItem("skillmesh_user", JSON.stringify(newStudent)); } catch (e) {}
+    return newStudent;
+  };
+
+  // Profile update handlers
+  const updateProfileSkills = async (updatedSkills) => {
+    if (!currentUser) return;
+    const updated = { ...currentUser, skills: updatedSkills };
+    setCurrentUser(updated);
+    try { sessionStorage.setItem("skillmesh_user", JSON.stringify(updated)); } catch (e) {}
+    setStudents(prev => prev.map((s) => (s.id === currentUser.id ? updated : s)));
+
+    try {
+      await fetch(`${API_URL}?action=update_skills`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: currentUser.id, skills: updatedSkills })
+      });
+      setIsBackendConnected(true);
+    } catch (e) {
+      console.warn("Backend update_skills unreachable, retained local change:", e);
+    }
+  };
+
+  const updateProfileDetails = async (details) => {
+    if (!currentUser) return;
+    const updated = { ...currentUser, ...details, initials: getInitials(details.name) };
+    setCurrentUser(updated);
+    try { sessionStorage.setItem("skillmesh_user", JSON.stringify(updated)); } catch (e) {}
+    setStudents(prev => prev.map((s) => (s.id === currentUser.id ? updated : s)));
+
+    try {
+      await fetch(`${API_URL}?action=update_profile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_id: currentUser.id,
+          name: details.name,
+          department: details.department,
+          year: details.year,
+          role: details.role
+        })
+      });
+      setIsBackendConnected(true);
+    } catch (e) {
+      console.warn("Backend update_profile unreachable, retained local change:", e);
+    }
+  };
+
+  // Project handlers
+  const addProject = async (projData) => {
+    try {
+      const res = await fetch(`${API_URL}?action=create_project`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...projData,
+          created_by: currentUser?.id || projData.created_by || 1
+        })
+      });
+      const resData = await res.json();
+      if (resData && resData.status === "success" && resData.data) {
+        const created = resData.data;
+        setProjects(prev => [created, ...prev]);
+        setIsBackendConnected(true);
+        return created;
+      }
+    } catch (e) {
+      console.warn("Backend create_project unreachable, saving to local state...", e);
+    }
+
+    // Fallback: in-memory project addition
+    const newId = projects.length + 1;
+    const newProj = {
+      id: newId,
+      ...projData,
+      status: "Active"
+    };
+    setProjects(prev => [newProj, ...prev]);
+    return newProj;
+  };
+
+  const toggleTeamMember = async (projectId, studentId) => {
+    // Optimistic UI update
+    setProjects(prev =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        const exists = p.team_members.includes(studentId);
+        const updated = exists
+          ? p.team_members.filter((id) => id !== studentId)
+          : [...p.team_members, studentId];
+        return { ...p, team_members: updated };
+      })
+    );
+
+    // Call backend API
+    try {
+      const res = await fetch(`${API_URL}?action=toggle_member`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: projectId, student_id: studentId })
+      });
+      const data = await res.json();
+      if (data && data.status === "success") {
+        setIsBackendConnected(true);
+      }
+    } catch (e) {
+      console.warn("Backend toggle_member unreachable, retained local change:", e);
+    }
+  };
+
+  // Request handlers
+  const sendCollabRequest = async (reqData) => {
+    const newReq = {
+      id: requests.length + 1,
+      ...reqData,
+      status: "pending",
+      date: new Date().toISOString().split("T")[0]
+    };
+    setRequests(prev => [newReq, ...prev]);
+
+    try {
+      await fetch(`${API_URL}?action=send_request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reqData)
+      });
+      setIsBackendConnected(true);
+    } catch (e) {
+      console.warn("Backend send_request unreachable, retained local request:", e);
+    }
+  };
+
+  const respondToRequest = async (requestId, newStatus) => {
+    setRequests(prev =>
+      prev.map((r) => {
+        if (r.id !== requestId) return r;
+        if (newStatus === "accepted") {
+          toggleTeamMember(r.project_id, r.to_student_id);
+        }
+        return { ...r, status: newStatus };
+      })
+    );
+
+    try {
+      await fetch(`${API_URL}?action=respond_request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_id: requestId, status: newStatus })
+      });
+      setIsBackendConnected(true);
+    } catch (e) {
+      console.warn("Backend respond_request unreachable, retained local update:", e);
+    }
+  };
+
+  const pendingRequestsCount = useMemo(() => {
+    if (!currentUser) return 0;
+    return requests.filter((r) => r.to_student_id === currentUser.id && r.status === "pending").length;
+  }, [requests, currentUser]);
+
+  const contextValue = {
+    currentUser,
+    students,
+    projects,
+    requests,
+    isBackendConnected,
+    darkMode,
+    loginUser,
+    logoutUser,
+    registerUser,
+    updateProfileSkills,
+    updateProfileDetails,
+    addProject,
+    toggleTeamMember,
+    sendCollabRequest,
+    respondToRequest
+  };
+
+  return (
+    <AppContext.Provider value={contextValue}>
+      <HashRouter>
+        <div className="d-flex flex-column min-vh-100 bg-surface-2">
+          <Navbar
+            currentUser={currentUser}
+            onLogout={logoutUser}
+            requestsCount={pendingRequestsCount}
+            isBackendConnected={isBackendConnected}
+            darkMode={darkMode}
+            onToggleDark={toggleDarkMode}
+          />
+
+          <main className="flex-grow-1">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/dashboard" element={<StudentDashboard />} />
+              <Route path="/profile" element={<StudentProfilePage />} />
+              <Route path="/projects" element={<ProjectDetailsPage />} />
+              <Route path="/create-project" element={<CreateProjectPage />} />
+              <Route path="/project/:id" element={<ProjectDetailsPage />} />
+              <Route path="/team-builder" element={<TeamBuilderPage initialTab="builder" />} />
+              <Route path="/team-builder/:id" element={<TeamBuilderPage initialTab="builder" />} />
+              <Route path="/team-intelligence" element={<TeamBuilderPage initialTab="intelligence" />} />
+              <Route path="/team-intelligence/:id" element={<TeamBuilderPage initialTab="intelligence" />} />
+              <Route path="/skill-gaps" element={<TeamBuilderPage initialTab="gaps" />} />
+              <Route path="/skill-gaps/:id" element={<TeamBuilderPage initialTab="gaps" />} />
+              <Route path="/risk-analysis" element={<TeamBuilderPage initialTab="risks" />} />
+              <Route path="/risk-analysis/:id" element={<TeamBuilderPage initialTab="risks" />} />
+              <Route path="/recommendations" element={<TeamBuilderPage initialTab="recommendations" />} />
+              <Route path="/recommendations/:id" element={<TeamBuilderPage initialTab="recommendations" />} />
+              <Route path="/students" element={<ExploreStudentsPage />} />
+              <Route path="/requests" element={<CollaborationRequestsPage />} />
+            </Routes>
+          </main>
+
+          <Footer />
+        </div>
+      </HashRouter>
+    </AppContext.Provider>
+  );
+}
+
+// Render React App with safety check
+const rootElement = document.getElementById("root");
+if (rootElement) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(<App />);
+  const ls = document.getElementById("loading-screen");
+  if (ls) ls.remove();
+}
+  </script>
+
+</body>
+</html>
